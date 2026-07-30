@@ -1,0 +1,1512 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pesquisa de Satisfação do Cliente · Grandes Clientes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0A2A43; --navy-2:#123A5C; --navy-3:#1B4E76;
+    --water:#1C7EBE; --water-soft:#E4F1FA; --water-line:#C9E3F3;
+    --leaf:#2C9A66; --leaf-soft:#E3F5EC; --leaf-line:#BFE6D2;
+    --amber:#B9791A; --amber-soft:#FBF1DE; --amber-line:#EFD9AE;
+    --rose:#C0492E; --rose-soft:#FBE9E5; --rose-line:#F0C7BC;
+    --bg:#EEF3F7; --surface:#FFFFFF; --border:#DEE6EC;
+    --text:#12232F; --text-mut:#5B7285; --text-faint:#8CA0AF;
+    --radius:16px; --radius-sm:10px;
+    --shadow-xs:0 1px 2px rgba(10,42,67,.05);
+    --shadow-sm:0 4px 14px -6px rgba(10,42,67,.14);
+    --shadow-md:0 14px 34px -14px rgba(10,42,67,.28);
+    --shadow-lg:0 24px 60px -20px rgba(10,42,67,.34);
+    --font-display:'Manrope',sans-serif; --font-body:'Inter',sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--font-body); -webkit-font-smoothing:antialiased; }
+  ::selection{ background:var(--water-soft); color:var(--navy); }
+  ::-webkit-scrollbar{ height:8px; width:8px; }
+  ::-webkit-scrollbar-thumb{ background:#C7D6DF; border-radius:100px; }
+  a{ color:inherit; }
+  button, input, select, textarea{ font-family:var(--font-body); }
+  :focus-visible{ outline:2px solid var(--water); outline-offset:2px; border-radius:4px; }
+
+  /* ---------- HERO ---------- */
+  .hero-wrap{
+    background:
+      radial-gradient(1100px 420px at 12% -20%, rgba(255,255,255,.08), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, rgba(28,126,190,.35), transparent 55%),
+      linear-gradient(160deg, var(--navy) 0%, var(--navy-2) 55%, var(--navy-3) 100%);
+    padding:34px 20px 64px;
+    position:relative; overflow:hidden;
+  }
+  .hero-wrap::after{
+    content:''; position:absolute; inset:0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px);
+    background-size:34px 34px;
+    mask-image:linear-gradient(180deg, rgba(0,0,0,.5), transparent 75%);
+    pointer-events:none;
+  }
+  .hero-inner{ max-width:1180px; margin:0 auto; position:relative; z-index:1; }
+  .eyebrow{ display:inline-flex; align-items:center; gap:8px; font-size:12px; letter-spacing:.09em; text-transform:uppercase; color:#BFE0F5; font-weight:700; margin-bottom:14px; }
+  .eyebrow .dot{ width:6px; height:6px; border-radius:50%; background:#5FC1F0; box-shadow:0 0 0 4px rgba(95,193,240,.22); }
+  .hero-inner h1{ font-family:var(--font-display); font-weight:800; font-size:clamp(24px,3.4vw,33px); color:#fff; margin:0 0 10px; letter-spacing:-.01em; }
+  .hero-inner > p{ margin:0; color:#CBDCE9; font-size:14.5px; max-width:680px; line-height:1.65; }
+
+  /* stepper */
+  .flow{ display:flex; align-items:flex-start; gap:0; margin-top:30px; }
+  .flow-step{ flex:1; display:flex; flex-direction:column; align-items:flex-start; gap:10px; position:relative; padding-right:18px; }
+  .flow-step .icon-circle{
+    width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center;
+    background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.18); color:#fff;
+    backdrop-filter:blur(2px);
+  }
+  .flow-step .icon-circle svg{ width:20px; height:20px; }
+  .flow-line{ position:absolute; top:21px; left:52px; right:8px; height:2px; background:linear-gradient(90deg, rgba(255,255,255,.35), rgba(255,255,255,.08)); }
+  .flow-step:last-child .flow-line{ display:none; }
+  .flow-step .flow-role{ font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:#8FD0F2; }
+  .flow-step .flow-text{ font-size:13px; color:#E4EEF4; line-height:1.55; max-width:280px; }
+  .flow-step .flow-text b{ color:#fff; }
+
+  .limit-note{
+    display:flex; gap:10px; align-items:flex-start; background:rgba(185,121,26,.16); border:1px solid rgba(239,217,174,.4);
+    border-radius:12px; padding:12px 15px; margin-top:22px; font-size:12.5px; color:#FCE7C2; line-height:1.6; max-width:820px;
+  }
+  .limit-note svg{ flex:none; width:16px; height:16px; margin-top:1px; color:#F0C674; }
+
+  /* ---------- MAIN ---------- */
+  .app{ max-width:1180px; margin:-36px auto 60px; padding:0 20px; position:relative; z-index:2; }
+
+  nav.tabs{
+    display:flex; gap:6px; background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    padding:6px; box-shadow:var(--shadow-md); overflow-x:auto; scrollbar-width:none;
+  }
+  nav.tabs::-webkit-scrollbar{ display:none; }
+  nav.tabs button{
+    appearance:none; border:none; background:none; cursor:pointer; font-weight:700; font-size:13.5px; color:var(--text-mut);
+    padding:11px 16px; border-radius:10px; transition:.18s; display:flex; align-items:center; gap:8px; white-space:nowrap; flex:1; justify-content:center;
+  }
+  nav.tabs button svg{ width:16px; height:16px; flex:none; }
+  nav.tabs button.active{ color:#fff; background:var(--navy); box-shadow:0 6px 16px -6px rgba(10,42,67,.5); }
+  nav.tabs button:not(.active):hover{ color:var(--navy); background:var(--water-soft); }
+  .tab-badge{
+    background:rgba(255,255,255,.22); color:#fff; font-size:11px; font-weight:800; border-radius:100px; padding:1px 7px; line-height:1.5;
+  }
+  nav.tabs button:not(.active) .tab-badge{ background:var(--amber-soft); color:var(--amber); }
+  nav.tabs button:not(.active) .tab-badge.zero{ display:none; }
+
+  .view{ display:none; }
+  .view.active{ display:block; animation:viewIn .32s cubic-bezier(.2,.8,.2,1); }
+  @keyframes viewIn{ from{ opacity:0; transform:translateY(10px);} to{ opacity:1; transform:translateY(0);} }
+
+  .card{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px 24px 26px;
+    box-shadow:var(--shadow-xs); margin-top:20px; transition:box-shadow .2s, transform .2s;
+    animation:cardIn .4s cubic-bezier(.2,.8,.2,1) backwards;
+  }
+  .card:hover{ box-shadow:var(--shadow-sm); }
+  @keyframes cardIn{ from{ opacity:0; transform:translateY(8px);} to{ opacity:1; transform:translateY(0);} }
+  .view.active .card:nth-of-type(1){ animation-delay:.02s; }
+  .view.active .card:nth-of-type(2){ animation-delay:.08s; }
+  .view.active .card:nth-of-type(3){ animation-delay:.14s; }
+  .view.active .card:nth-of-type(4){ animation-delay:.2s; }
+
+  .card-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:14px; margin-bottom:4px; flex-wrap:wrap; }
+  .card h2{ font-family:var(--font-display); font-size:16.5px; font-weight:800; color:var(--navy); margin:0 0 4px; letter-spacing:-.01em; }
+  .card .sub{ font-size:13px; color:var(--text-mut); margin:0 0 18px; line-height:1.55; max-width:640px; }
+
+  .role-tag{ display:inline-flex; align-items:center; gap:5px; font-size:10.5px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; padding:4px 10px; border-radius:100px; vertical-align:middle; }
+  .role-analista{ background:var(--water-soft); color:var(--water); }
+  .role-gestor{ background:var(--leaf-soft); color:var(--leaf); }
+  .plr-tag{ background:linear-gradient(135deg,#FCEBD9,#FBE1C4); color:#9A5A0E; }
+
+  .grid-form{ display:grid; grid-template-columns:repeat(6,1fr); gap:14px; align-items:end; }
+  .field{ display:flex; flex-direction:column; gap:6px; grid-column:span 1; }
+  .field.span2{ grid-column:span 2; }
+  .field.span3{ grid-column:span 3; }
+  .field.span6{ grid-column:span 6; }
+  .field label{ font-size:12px; font-weight:700; color:var(--text-mut); }
+  .field input, .field select, .field textarea{
+    font-family:var(--font-body); font-size:14px; padding:10px 12px; border-radius:10px; border:1px solid var(--border);
+    background:#FBFDFE; color:var(--text); outline:none; transition:.15s;
+  }
+  .field input:hover, .field select:hover{ border-color:#C3D2DB; }
+  .field input:focus, .field select:focus, .field textarea:focus{ border-color:var(--water); box-shadow:0 0 0 3px var(--water-soft); }
+  .radio-group{ display:flex; gap:16px; flex-wrap:wrap; padding:10px 0; }
+  .radio-group label{ display:flex; align-items:center; gap:7px; font-size:13.5px; font-weight:500; color:var(--text); cursor:pointer; }
+  .radio-group input{ accent-color:var(--water); width:15px; height:15px; }
+
+  .upload-box{
+    border:1.5px dashed var(--border); border-radius:12px; padding:16px; background:#FBFDFE; transition:.15s;
+  }
+  .upload-box.has-file{ border-style:solid; border-color:var(--water-line); background:var(--water-soft); }
+  .upload-box .upload-row{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .upload-box input[type="file"]{ font-size:12.5px; max-width:100%; }
+  .upload-thumb{
+    display:flex; align-items:center; gap:10px; background:var(--surface); border:1px solid var(--border); border-radius:10px;
+    padding:6px 10px 6px 6px;
+  }
+  .upload-thumb img{ width:44px; height:44px; object-fit:cover; border-radius:7px; cursor:zoom-in; display:block; }
+  .upload-thumb .name{ font-size:12.5px; color:var(--navy-2); font-weight:600; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .upload-thumb .remove{ background:none; border:none; cursor:pointer; color:var(--rose); font-size:12px; font-weight:700; padding:2px 6px; }
+  .upload-hint{ font-size:12px; color:var(--text-mut); margin-top:8px; line-height:1.5; }
+  .upload-err{ font-size:12px; color:var(--rose); margin-top:8px; font-weight:600; }
+
+  .evid-thumb{ width:38px; height:38px; object-fit:cover; border-radius:8px; cursor:zoom-in; border:1px solid var(--border); vertical-align:middle; }
+  .evid-cell{ display:flex; align-items:center; gap:8px; }
+  .evid-none{ color:var(--text-faint); font-size:12.5px; }
+
+  .lightbox{
+    position:fixed; inset:0; background:rgba(10,20,30,.72); display:none; align-items:center; justify-content:center;
+    z-index:999; padding:30px; animation:lbIn .18s ease;
+  }
+  .lightbox.open{ display:flex; }
+  @keyframes lbIn{ from{ opacity:0; } to{ opacity:1; } }
+  .lightbox img{ max-width:min(900px,92vw); max-height:88vh; border-radius:10px; box-shadow:var(--shadow-lg); }
+  .lightbox .lb-close{
+    position:absolute; top:22px; right:26px; width:38px; height:38px; border-radius:50%; background:rgba(255,255,255,.14);
+    border:1px solid rgba(255,255,255,.3); color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  }
+  .lightbox .lb-close:hover{ background:rgba(255,255,255,.24); }
+
+  .btn{ font-weight:700; font-size:13.5px; cursor:pointer; border:none; border-radius:10px; padding:11px 20px; transition:.15s; display:inline-flex; align-items:center; gap:7px; }
+  .btn svg{ width:15px; height:15px; }
+  .btn-primary{ background:var(--navy); color:#fff; box-shadow:0 6px 16px -6px rgba(10,42,67,.45); }
+  .btn-primary:hover{ background:var(--navy-2); transform:translateY(-1px); }
+  .btn-ghost{ background:none; border:1px solid var(--border); color:var(--navy); }
+  .btn-ghost:hover{ border-color:var(--water); color:var(--water); background:var(--water-soft); }
+  .btn-approve{ background:var(--leaf); color:#fff; }
+  .btn-approve:hover{ background:#25835A; }
+  .btn-reject{ background:none; border:1px solid var(--rose-line); color:var(--rose); }
+  .btn-reject:hover{ background:var(--rose-soft); }
+  .btn-sm{ padding:7px 13px; font-size:12.5px; }
+  .btn:disabled{ opacity:.5; cursor:default; transform:none !important; }
+
+  table{ width:100%; border-collapse:collapse; font-size:13.5px; }
+  th{ text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-mut); font-weight:700; padding:9px 12px; border-bottom:1px solid var(--border); }
+  td{ padding:11px 12px; border-bottom:1px solid #EEF3F6; vertical-align:middle; }
+  tr{ transition:background .12s; }
+  tbody tr:hover td{ background:#FAFCFD; }
+  tr:last-child td{ border-bottom:none; }
+  tr.selected td{ background:var(--water-soft); }
+  .empty-row td{ text-align:center; color:var(--text-faint); padding:34px 10px; font-size:13.5px; }
+
+  .stars{ display:flex; gap:4px; }
+  .stars button{ background:none; border:none; cursor:pointer; font-size:24px; color:#D8E2E8; padding:0; line-height:1; transition:.12s transform, .12s color; }
+  .stars button:hover{ transform:scale(1.12); }
+  .stars button.filled{ color:#F0A93A; }
+
+  .badge{ display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:100px; font-size:11px; font-weight:700; white-space:nowrap; }
+  .badge-pendente{ background:var(--amber-soft); color:var(--amber); }
+  .badge-aguardando{ background:var(--water-soft); color:var(--water); }
+  .badge-validado{ background:var(--leaf-soft); color:var(--leaf); }
+  .badge-rejeitado{ background:var(--rose-soft); color:var(--rose); }
+
+  .kpi-row{ display:grid; grid-template-columns:repeat(6,1fr); gap:14px; margin-bottom:4px; }
+  .kpi{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px 18px 16px;
+    position:relative; overflow:hidden; transition:.2s; animation:cardIn .4s backwards;
+  }
+  .kpi:hover{ box-shadow:var(--shadow-sm); transform:translateY(-2px); }
+  .kpi::before{ content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--water); opacity:.7; }
+  .kpi.leaf::before{ background:var(--leaf); } .kpi.rose::before{ background:var(--rose); }
+  .kpi .label{ font-size:11.5px; color:var(--text-mut); font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:6px; }
+  .kpi .label svg{ width:14px; height:14px; color:var(--text-faint); }
+  .kpi .value{ font-family:var(--font-display); font-size:27px; font-weight:800; color:var(--navy); letter-spacing:-.01em; }
+  .kpi .value.leaf{ color:var(--leaf); } .kpi .value.water{ color:var(--water); } .kpi .value.rose{ color:var(--rose); }
+
+  .panel-top{ display:flex; gap:14px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin:22px 0 18px; }
+  .filters{ display:flex; gap:10px; flex-wrap:wrap; }
+  .filters select{ font-size:13px; font-weight:500; padding:9px 12px; border-radius:10px; border:1px solid var(--border); background:var(--surface); color:var(--text); }
+  .filters select:hover{ border-color:#C3D2DB; }
+
+  .section-divider{ display:flex; align-items:center; gap:10px; margin:32px 0 4px; }
+  .section-divider .eyebrow-sm{ font-family:var(--font-display); font-weight:800; font-size:14.5px; color:var(--navy); white-space:nowrap; }
+  .section-divider .line{ height:1px; flex:1; background:linear-gradient(90deg, var(--border), transparent); }
+
+  .gauge-wrap{ display:flex; align-items:center; gap:22px; flex-wrap:wrap; }
+  .gauge-text .big{ font-family:var(--font-display); font-weight:800; font-size:23px; color:var(--navy); }
+  .gauge-text .small{ font-size:12.5px; color:var(--text-mut); margin-top:3px; }
+  .gauge-legend{ display:flex; flex-direction:column; gap:8px; margin-left:auto; }
+  .gauge-legend div{ font-size:12px; color:var(--text-mut); display:flex; align-items:center; gap:7px; }
+  .gauge-legend .sw{ width:9px; height:9px; border-radius:3px; }
+
+  .dist-bars{ display:flex; flex-direction:column; gap:9px; margin-top:6px; }
+  .dist-row{ display:grid; grid-template-columns:170px 1fr 40px; align-items:center; gap:12px; font-size:13px; }
+  .dist-row.stars-row{ grid-template-columns:46px 1fr 40px; }
+  .dist-track{ background:#EEF3F6; border-radius:100px; height:10px; overflow:hidden; }
+  .dist-fill{ height:100%; background:var(--water); border-radius:100px; transition:width .5s cubic-bezier(.2,.8,.2,1); }
+  .dist-fill.leaf{ background:var(--leaf); } .dist-fill.amber{ background:var(--amber); }
+
+  .two-col{ display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .two-col .card{ margin-top:0; }
+  .search-row{ display:flex; gap:10px; margin-bottom:16px; position:relative; }
+  .search-row svg{ position:absolute; left:13px; top:50%; transform:translateY(-50%); width:15px; height:15px; color:var(--text-faint); pointer-events:none; }
+  .search-row input{ flex:1; padding:10px 12px 10px 36px; border-radius:10px; border:1px solid var(--border); font-size:13.5px; background:#FBFDFE; }
+  .search-row input:focus{ outline:none; border-color:var(--water); box-shadow:0 0 0 3px var(--water-soft); }
+
+  .selected-box{ background:var(--water-soft); border:1px solid var(--water-line); border-radius:12px; padding:12px 16px; font-size:13.5px; color:var(--navy-2); margin-bottom:18px; display:flex; align-items:center; gap:9px; }
+  .placeholder-box{ text-align:center; color:var(--text-faint); font-size:13.5px; padding:38px 10px; display:flex; flex-direction:column; align-items:center; gap:10px; }
+  .placeholder-box svg{ width:30px; height:30px; opacity:.4; }
+
+  .poll-block{ border:1px solid var(--border); border-left:3px solid var(--water); border-radius:12px; padding:16px 18px; margin-bottom:12px; background:#FBFDFE; transition:.15s; }
+  .poll-block:hover{ box-shadow:var(--shadow-xs); }
+  .poll-block:first-child{ border-left-color:#D89A2E; background:linear-gradient(180deg,#FFFCF6,#FBFDFE); }
+  .poll-block:last-child{ margin-bottom:0; }
+  .poll-block .poll-title{ font-size:11px; font-weight:800; color:var(--water); text-transform:uppercase; letter-spacing:.04em; margin-bottom:7px; }
+  .poll-block:first-child .poll-title{ color:#B9791A; }
+  .poll-block .poll-question{ font-weight:700; font-size:14.5px; color:var(--navy); margin-bottom:9px; }
+  .poll-block .poll-options{ font-size:13.5px; color:var(--text); line-height:1.75; margin-bottom:11px; }
+  .poll-block .poll-options div{ padding-left:2px; }
+
+  footer.note{ margin-top:30px; font-size:12px; color:var(--text-mut); line-height:1.7; text-align:center; padding:0 20px; }
+
+  @media (max-width:900px){
+    .grid-form{ grid-template-columns:repeat(2,1fr); }
+    .field.span2, .field.span3{ grid-column:span 2; }
+    .kpi-row{ grid-template-columns:repeat(2,1fr); }
+    .two-col{ grid-template-columns:1fr; }
+    .panel-top{ flex-direction:column; align-items:flex-start; }
+    .flow{ flex-direction:column; gap:18px; }
+    .flow-line{ display:none; }
+    .flow-step{ padding-right:0; }
+    .dist-row{ grid-template-columns:120px 1fr 32px; }
+    .app{ margin-top:-24px; }
+    .hero-wrap{ padding-bottom:52px; }
+  }
+  @media (max-width:520px){
+    .kpi-row{ grid-template-columns:repeat(2,1fr); }
+    nav.tabs button span.lbl{ display:none; }
+    nav.tabs button{ flex-direction:column; gap:4px; padding:10px 8px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero-wrap">
+  <div class="hero-inner">
+    <div class="eyebrow"><span class="dot"></span>Águas do Rio · Grandes Clientes</div>
+    <h1>Pesquisa de Satisfação do Cliente</h1>
+    <p>Cobre qualquer atendimento realizado pelo analista. O cliente responde 4 perguntas; apenas a nota do executivo de contas (pergunta 1) afeta a PLR e por isso passa por evidência + validação do gestor. As demais são indicadores operacionais do serviço.</p>
+
+    <div class="flow">
+      <div class="flow-step">
+        <div class="icon-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 3v2a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V3"/><path d="M9 12h6M9 16h4"/></svg></div>
+        <div class="flow-role">Passo 1 · Analista</div>
+        <div class="flow-text"><b>Analista</b> presta o atendimento e registra aqui, no mesmo fio de conversa do cliente.</div>
+        <div class="flow-line"></div>
+      </div>
+      <div class="flow-step">
+        <div class="icon-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
+        <div class="flow-role">Passo 2 · Analista</div>
+        <div class="flow-text">Quando o cliente responde as 4 perguntas, o <b>analista</b> lança tudo e encaminha a mensagem/print da nota do executivo ao gestor.</div>
+        <div class="flow-line"></div>
+      </div>
+      <div class="flow-step">
+        <div class="icon-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></div>
+        <div class="flow-role">Passo 3 · Gestor de 1ª linha</div>
+        <div class="flow-text"><b>Gestor de 1ª linha</b> confere a evidência da pergunta 1 e valida ou rejeita — só essa entra na PLR.</div>
+      </div>
+    </div>
+
+    <div class="limit-note">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg>
+      <span><b>Sobre a evidência:</b> ao lançar as respostas, o analista pode anexar diretamente aqui o print/foto do retorno do cliente com a nota do executivo (a imagem é compactada automaticamente). Arquivos muito grandes ou fora do formato imagem ainda não são suportados — nesse caso, continue combinando o envio por fora (WhatsApp/e-mail) com o gestor.</span>
+    </div>
+  </div>
+</div>
+
+<div class="app">
+
+  <nav class="tabs">
+    <button class="active" data-view="registrar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 3v2a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V3"/><path d="M12 11v4M10 13h4"/></svg>
+      <span class="lbl">Registrar atendimento</span>
+    </button>
+    <button data-view="lancar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+      <span class="lbl">Lançar respostas</span>
+      <span class="tab-badge zero" id="badge-lancar">0</span>
+    </button>
+    <button data-view="validar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+      <span class="lbl">Validar nota</span>
+      <span class="tab-badge zero" id="badge-validar">0</span>
+    </button>
+    <button data-view="painel">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12.5" y="8" width="3" height="10"/><rect x="18" y="5" width="3" height="13"/></svg>
+      <span class="lbl">Painel consolidado</span>
+    </button>
+  </nav>
+
+  <!-- 1. REGISTRAR ATENDIMENTO -->
+  <section id="view-registrar" class="view active">
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <h2>Novo atendimento <span class="role-tag role-analista">analista</span></h2>
+          <p class="sub">Registre logo após concluir qualquer atendimento com o cliente. O horário é gravado automaticamente.</p>
+        </div>
+      </div>
+      <div class="grid-form">
+        <div class="field"><label>Matrícula</label><input type="text" id="in-matricula" placeholder="Ex: 123456"></div>
+        <div class="field"><label>Telefone do cliente</label><input type="text" id="in-telefone" placeholder="(21) 9...."></div>
+        <div class="field">
+          <label>Analista</label>
+          <select id="in-analista">
+            <option value="">Selecione</option>
+            <option>Alessandra dos Santos</option>
+            <option>Alessandro Silveira</option>
+            <option>Aline Nunes</option>
+            <option>Danielle Matta</option>
+            <option>Danillo Castro</option>
+            <option>Diogo Garcia</option>
+            <option>Ediane Andrade</option>
+            <option>Ettiene Simoes</option>
+            <option>Fellipe Braga</option>
+            <option>Hagata Oliveira</option>
+            <option>Igor Coelho</option>
+            <option>Isabella Celio</option>
+            <option>Lhorrany Diamante</option>
+            <option>Livia Christine</option>
+            <option>Manuela Curvello</option>
+            <option>Marcos Rato</option>
+            <option>Matheus Betbeder</option>
+            <option>Mirella Saviti</option>
+            <option>Raniely Silva</option>
+            <option>Taina Costa</option>
+            <option>Tatiana Ribeiro</option>
+          </select>
+        </div>
+        <div class="field span2">
+          <label>Tipo de atendimento</label>
+          <select id="in-tipo">
+            <option value="">Selecione</option>
+            <option>Falta de abastecimento</option>
+            <option>Consumo Elevado</option>
+            <option>Solicitação de reparo de água/esgoto</option>
+            <option>Negociação de débitos</option>
+            <option>Segunda via de conta</option>
+            <option>Esclarecimento de dúvidas</option>
+            <option>Atualização cadastral</option>
+            <option>Outros</option>
+          </select>
+        </div>
+        <div class="field span2" id="in-tipo-outros-wrap" style="display:none;">
+          <label>Especifique o tipo de atendimento</label>
+          <input type="text" id="in-tipo-outros" placeholder="Descreva o tipo de atendimento">
+        </div>
+        <div class="field">
+          <label>Superintendência</label>
+          <select id="in-superintendencia">
+            <option value="">Selecione</option>
+            <option>BAIXADA 01</option><option>BAIXADA 02</option><option>RIO NORTE</option>
+            <option>LESTE</option><option>RIO CENTRO SUL</option><option>INTERIOR</option><option>COMUNIDADES</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Segmento</label>
+          <select id="in-segmento">
+            <option value="">Selecione</option>
+            <option>Bancos</option>
+            <option>Bar e Restaurante</option>
+            <option>Chorume e Limpa Fossa</option>
+            <option>Clubes</option>
+            <option>Concessionárias</option>
+            <option>Condomínio Comercial</option>
+            <option>Condomínio Residencial</option>
+            <option>Contrato de Demanda</option>
+            <option>Educação e Academia</option>
+            <option>Farmácias</option>
+            <option>Hospitais e Clínicas</option>
+            <option>Hotel</option>
+            <option>Imobiliárias</option>
+            <option>Mercado</option>
+            <option>Shoppings e Lojas</option>
+            <option>Transporte e Logística</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-top:16px;">
+        <button class="btn btn-primary" id="btn-salvar-envio">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          Registrar atendimento
+        </button>
+        <span id="msg-envio" style="margin-left:12px; font-size:13px; font-weight:700;"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Textos prontos para as 4 enquetes do WhatsApp</h2>
+      <p class="sub"><b>Crie cada enquete apenas uma vez</b> (anexo → Enquete, colando a pergunta e digitando as opções abaixo), de preferência na conversa "Mensagem para você mesmo". Para os próximos clientes, não recrie — segure a mensagem da enquete e toque em <b>Encaminhar</b>, escolhendo o cliente. O texto abaixo serve de referência pra digitar certinho na primeira vez (o WhatsApp não permite colar tudo de uma vez nas opções).</p>
+      <div id="poll-templates"></div>
+    </div>
+
+    <div class="card">
+      <h2>Atendimentos registrados recentemente</h2>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead><tr><th>Matrícula</th><th>Analista</th><th>Tipo</th><th>Superint.</th><th>Segmento</th><th>Registrado em</th><th>Status</th></tr></thead>
+          <tbody id="tbody-recentes"><tr class="empty-row"><td colspan="7">Carregando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. LANÇAR RESPOSTAS -->
+  <section id="view-lancar" class="view">
+    <div class="card">
+      <h2>1. Selecione o atendimento <span class="role-tag role-analista">analista</span></h2>
+      <p class="sub">Localize o atendimento cujo cliente já respondeu a pesquisa.</p>
+      <div class="search-row">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="busca-pendente" placeholder="Buscar por matrícula, telefone ou analista...">
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead><tr><th>Matrícula</th><th>Analista</th><th>Tipo</th><th>Registrado em</th><th></th></tr></thead>
+          <tbody id="tbody-pendentes"><tr class="empty-row"><td colspan="5">Carregando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>2. Respostas do cliente <span class="role-tag role-analista">analista</span></h2>
+      <p class="sub">Preencha as 4 respostas do cliente. A evidência abaixo vale só para a pergunta 1 (nota do executivo).</p>
+      <div id="lancar-form-area">
+        <div class="placeholder-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+          Selecione um atendimento na lista acima para lançar as respostas.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. VALIDAR NOTA DO EXECUTIVO -->
+  <section id="view-validar" class="view">
+    <div class="card">
+      <h2>Aguardando validação <span class="role-tag role-gestor">gestor de 1ª linha</span> <span class="role-tag plr-tag">afeta PLR</span></h2>
+      <p class="sub">Confira a evidência recebida da pergunta 1 (nota do executivo de contas) e valide ou rejeite.</p>
+      <div class="search-row">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="busca-validar" placeholder="Buscar por matrícula...">
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead><tr><th>Matrícula</th><th>Analista</th><th>Nota executivo</th><th>Evidência</th><th>Gestor / Observação</th><th></th></tr></thead>
+          <tbody id="tbody-validar"><tr class="empty-row"><td colspan="6">Carregando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Validados / rejeitados recentemente</h2>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead><tr><th>Matrícula</th><th>Analista</th><th>Nota</th><th>Resultado</th><th>Gestor</th><th>Data</th></tr></thead>
+          <tbody id="tbody-historico-validacao"><tr class="empty-row"><td colspan="6">Carregando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. PAINEL -->
+  <section id="view-painel" class="view">
+    <div class="panel-top">
+      <div class="filters">
+        <select id="f-mes"><option value="">Todos os meses</option></select>
+        <select id="f-superintendencia">
+          <option value="">Todas as superintendências</option>
+          <option>BAIXADA 01</option><option>BAIXADA 02</option><option>RIO NORTE</option>
+          <option>LESTE</option><option>RIO CENTRO SUL</option><option>INTERIOR</option><option>COMUNIDADES</option>
+        </select>
+        <select id="f-analista"><option value="">Todos os analistas</option></select>
+        <select id="f-tipo"><option value="">Todos os tipos</option></select>
+        <select id="f-segmento"><option value="">Todos os segmentos</option></select>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <button class="btn btn-ghost btn-sm" id="btn-import">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V9m0 0-4 4m4-4 4 4M4 5h16"/></svg>
+          Importar CSV
+        </button>
+        <input type="file" id="input-import-csv" accept=".csv,text/csv" style="display:none;">
+        <button class="btn btn-ghost btn-sm" id="btn-export">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 19h16"/></svg>
+          Exportar CSV
+        </button>
+        <button class="btn btn-ghost btn-sm" id="btn-copy-csv">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+          Copiar CSV
+        </button>
+        <span id="msg-import" style="font-size:12.5px; font-weight:700;"></span>
+      </div>
+    </div>
+    <p style="font-size:12px; color:var(--text-mut); margin:8px 0 0;">Se o download do CSV aparecer bloqueado pelo navegador, use "Copiar CSV" e cole (Ctrl+V) em um Bloco de Notas ou direto numa planilha do Excel.</p>
+
+    <div class="section-divider" style="margin-top:0;">
+      <span class="eyebrow-sm">Pergunta 1 — Nota do executivo de contas</span>
+      <span class="role-tag plr-tag">indicador de PLR</span>
+      <div class="line"></div>
+    </div>
+
+    <div class="kpi-row">
+      <div class="kpi"><div class="label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>Enviados</div><div class="value" id="kpi-enviados">0</div></div>
+      <div class="kpi"><div class="label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>Respondidos</div><div class="value water" id="kpi-respondidos">0</div></div>
+      <div class="kpi"><div class="label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 2"/></svg>Abstenção</div><div class="value" id="kpi-abstencao">0%</div></div>
+      <div class="kpi leaf"><div class="label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>Validados (oficial)</div><div class="value leaf" id="kpi-validados">0</div></div>
+      <div class="kpi leaf"><div class="label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 2.9 6.6L22 9.3l-5 4.9 1.2 7.1L12 17.8l-6.2 3.5L7 14.2 2 9.3l7.1-.7z"/></svg>Nota média (validados)</div><div class="value leaf" id="kpi-nota">–</div></div>
+      <div class="kpi"><div class="label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>Meta PLR — nota ≥4 (min. 95%)</div><div class="value" id="kpi-plr">–</div></div>
+    </div>
+
+    <div class="card">
+      <div class="gauge-wrap">
+        <svg id="gauge" width="118" height="118" viewBox="0 0 118 118">
+          <defs><clipPath id="circleClip"><circle cx="59" cy="59" r="52"/></clipPath></defs>
+          <circle cx="59" cy="59" r="52" fill="var(--water-soft)"/>
+          <g clip-path="url(#circleClip)"><rect id="wave-fill" x="0" width="118" height="118" fill="var(--water)" y="118"/></g>
+          <circle cx="59" cy="59" r="52" fill="none" stroke="var(--navy)" stroke-opacity="0.08" stroke-width="2"/>
+        </svg>
+        <div class="gauge-text"><div class="big" id="gauge-pct">0%</div><div class="small">taxa de resposta dos clientes</div></div>
+        <div class="gauge-legend">
+          <div><span class="sw" style="background:var(--water)"></span>Clientes que responderam a pesquisa</div>
+          <div><span class="sw" style="background:var(--water-soft); border:1px solid var(--water-line)"></span>Clientes que ainda não responderam</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="two-col" style="margin-top:20px;">
+      <div class="card">
+        <h2>Por analista <span style="font-weight:500; color:var(--text-mut); font-size:12px;">(nota considera só validados)</span></h2>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>Analista</th><th>Env.</th><th>Resp.</th><th>Valid.</th><th>Nota</th></tr></thead>
+            <tbody id="tbody-por-analista"><tr class="empty-row"><td colspan="5">Sem dados</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Por superintendência</h2>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>Superint.</th><th>Env.</th><th>Resp.</th><th>Valid.</th><th>Nota</th></tr></thead>
+            <tbody id="tbody-por-superint"><tr class="empty-row"><td colspan="5">Sem dados</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="two-col" style="margin-top:20px;">
+      <div class="card">
+        <h2>Por tipo de atendimento</h2>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>Tipo</th><th>Env.</th><th>Resp.</th><th>Valid.</th><th>Nota</th></tr></thead>
+            <tbody id="tbody-por-tipo"><tr class="empty-row"><td colspan="5">Sem dados</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Por segmento</h2>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>Segmento</th><th>Env.</th><th>Resp.</th><th>Valid.</th><th>Nota</th></tr></thead>
+            <tbody id="tbody-por-segmento"><tr class="empty-row"><td colspan="5">Sem dados</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Distribuição das notas <span style="font-weight:500; color:var(--text-mut); font-size:12px;">(apenas validadas)</span></h2>
+      <div class="dist-bars" id="dist-bars"></div>
+    </div>
+
+    <div class="section-divider">
+      <span class="eyebrow-sm">Perguntas 2 a 4 — indicadores operacionais</span>
+      <span class="role-tag" style="background:#EEF3F6; color:var(--text-mut);">não afetam PLR</span>
+      <div class="line"></div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <h2>Qualidade do abastecimento</h2>
+        <div class="dist-bars" id="dist-abastecimento"></div>
+      </div>
+      <div class="card">
+        <h2>Solicitação resolvida no prazo?</h2>
+        <div class="dist-bars" id="dist-prazo"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Motivo do contato</h2>
+      <div class="dist-bars" id="dist-motivo"></div>
+    </div>
+  </section>
+
+  <footer class="note">
+    Envio e lançamento de respostas feitos pelo analista; validação da nota do executivo feita por um gestor de 1ª linha. Apenas a nota do executivo validada entra na apuração de PLR — as demais 3 perguntas são indicadores de serviço. Dados compartilhados entre todos os usuários da ferramenta.
+  </footer>
+
+</div>
+
+<div class="lightbox" id="lightbox">
+  <button type="button" class="lb-close" id="lightbox-close" aria-label="Fechar">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+  </button>
+  <img id="lightbox-img" src="" alt="Evidência ampliada">
+</div>
+
+<div class="lightbox" id="csv-modal">
+  <button type="button" class="lb-close" id="csv-modal-close" aria-label="Fechar">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+  </button>
+  <div style="background:var(--surface); border-radius:14px; padding:22px; max-width:min(720px,92vw); max-height:88vh; display:flex; flex-direction:column; gap:12px;" onclick="event.stopPropagation()">
+    <div>
+      <div style="font-family:var(--font-display); font-weight:800; color:var(--navy); font-size:15px;">Copiar dados do CSV</div>
+      <div style="font-size:12.5px; color:var(--text-mut); margin-top:4px;">O texto abaixo já está selecionado. Use Ctrl+C (ou ⌘+C) e cole em um Bloco de Notas ou direto numa planilha do Excel.</div>
+    </div>
+    <textarea id="csv-modal-textarea" readonly style="width:100%; height:320px; padding:10px; border:1px solid var(--border); border-radius:10px; font-family:'Inter',monospace; font-size:12px; resize:vertical;"></textarea>
+  </div>
+</div>
+
+<script>
+(function(){
+  // ======= CONFIGURAÇÃO — Supabase =======
+  const SUPABASE_URL = 'https://yidsjyfcuzytkejctqfp.supabase.co/rest/v1/registros';
+  const SUPABASE_KEY = 'sb_publishable_dJWDHA-YGrM3jIXgFBuk1w_ZxZSaHBQ';
+  // =========================================
+  let RECORDS = [];
+  let selectedId = null;
+
+  const OPCOES_ABASTECIMENTO = ['Ótimo — contínuo e sem problemas','Bom — falhas eventuais e rápidas','Regular — falhas frequentes','Ruim — abastecimento instável','Péssimo — sem abastecimento'];
+  const OPCOES_PRAZO = ['Sim, dentro do prazo','Finalizada com atraso','Ainda não foi resolvida','Não recebi prazo'];
+  const OPCOES_MOTIVO = ['Falta de abastecimento','Consumo Elevado','Solicitação de reparo de água/esgoto','Negociação de débitos','Segunda via de conta','Esclarecimento de dúvidas','Atualização cadastral','Outro'];
+  const NAO_RESPONDEU = 'Cliente não respondeu';
+  const OPCOES_ABASTECIMENTO_LANCAR = OPCOES_ABASTECIMENTO.concat([NAO_RESPONDEU]);
+  const OPCOES_PRAZO_LANCAR = OPCOES_PRAZO.concat([NAO_RESPONDEU]);
+  const OPCOES_MOTIVO_LANCAR = OPCOES_MOTIVO.concat([NAO_RESPONDEU]);
+  const EVID_LABEL = { encaminhada:'Mensagem encaminhada', print:'Print enviado', ambos:'Mensagem + print' };
+
+  const POLL_TEMPLATES = [
+    { titulo: 'Enquete 1 · afeta PLR', pergunta: 'Como você avalia a qualidade do atendimento do executivo de contas?',
+      opcoes: ['⭐ 1','⭐⭐ 2','⭐⭐⭐ 3','⭐⭐⭐⭐ 4','⭐⭐⭐⭐⭐ 5'] },
+    { titulo: 'Enquete 2', pergunta: 'Como você avalia a qualidade do seu abastecimento de água?', opcoes: OPCOES_ABASTECIMENTO },
+    { titulo: 'Enquete 3', pergunta: 'Sua solicitação foi resolvida dentro do prazo informado?', opcoes: OPCOES_PRAZO },
+    { titulo: 'Enquete 4', pergunta: 'Qual foi o motivo do seu contato?', opcoes: OPCOES_MOTIVO.map(o=>o==='Outro'?'Outro':o) }
+  ];
+
+  function renderPollTemplates(){
+    const el = document.getElementById('poll-templates');
+    if(!el) return;
+    el.innerHTML = POLL_TEMPLATES.map((p, idx)=>`
+      <div class="poll-block">
+        <div class="poll-title">${escapeHtml(p.titulo)}</div>
+        <div class="poll-question">${escapeHtml(p.pergunta)}</div>
+        <div class="poll-options">${p.opcoes.map((o,i)=>`<div>${idx===0?'•':(i+1)+'.'} ${escapeHtml(o)}</div>`).join('')}</div>
+        <button class="btn btn-ghost btn-sm" data-copy-poll="${idx}">Copiar</button>
+        <span class="copy-msg" data-msg-poll="${idx}" style="margin-left:8px; font-size:12.5px; color:var(--text-mut);"></span>
+        <textarea class="poll-manual" data-manual-poll="${idx}" readonly style="display:none; width:100%; margin-top:8px; padding:8px; border:1px solid var(--border); border-radius:8px; font-family:var(--font-body); font-size:12.5px; height:90px;"></textarea>
+      </div>
+    `).join('');
+
+    el.querySelectorAll('[data-copy-poll]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const idx = btn.dataset.copyPoll;
+        const p = POLL_TEMPLATES[parseInt(idx,10)];
+        const text = p.pergunta + '\n' + p.opcoes.map((o,i)=>(parseInt(idx,10)===0?'- ':(i+1)+'. ') + o).join('\n');
+        const msgEl = el.querySelector(`[data-msg-poll="${idx}"]`);
+        const manualEl = el.querySelector(`[data-manual-poll="${idx}"]`);
+
+        copyToClipboard(text).then(ok=>{
+          if(ok){
+            const old = btn.textContent; btn.textContent = 'Copiado!';
+            manualEl.style.display = 'none'; if(msgEl) msgEl.textContent = '';
+            setTimeout(()=>{ btn.textContent = old; }, 1500);
+          } else {
+            manualEl.style.display = 'block';
+            manualEl.value = text;
+            manualEl.focus(); manualEl.select();
+            if(msgEl) msgEl.textContent = 'Não copiou automaticamente — o texto está selecionado abaixo, use Ctrl+C (ou ⌘+C).';
+          }
+        });
+      });
+    });
+  }
+
+  function copyToClipboard(text){
+    if(navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext){
+      return navigator.clipboard.writeText(text).then(()=>true).catch(()=>legacyCopy(text));
+    }
+    return Promise.resolve(legacyCopy(text));
+  }
+
+  function legacyCopy(text){
+    try{
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed'; ta.style.left = '-9999px'; ta.style.top = '0';
+      document.body.appendChild(ta);
+      ta.focus(); ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    }catch(e){ return false; }
+  }
+
+  function uid(){ return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,8); }
+  function nowISO(){ return new Date().toISOString(); }
+  function todayISO(){ return new Date().toISOString().slice(0,10); }
+  function fmtDateBR(iso){ if(!iso) return '–'; const d = new Date(iso); if(isNaN(d)) return '–';
+    return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); }
+  function fmtDateOnlyBR(iso){ if(!iso) return '–'; const d = new Date(iso); if(isNaN(d)) return '–'; return d.toLocaleDateString('pt-BR'); }
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+  // ---------- storage (Supabase) ----------
+  const CONFIGURED = SUPABASE_URL && SUPABASE_KEY && SUPABASE_URL.indexOf('COLE_AQUI') === -1;
+
+  function toClientRecord(row){
+    return Object.assign({}, row, {
+      evidencia_imagem: row.evidencia_imagem_url || null,
+      nota_atendimento: (row.nota_atendimento !== null && row.nota_atendimento !== undefined) ? Number(row.nota_atendimento) : null
+    });
+  }
+
+  async function loadAll(){
+    if(!CONFIGURED){
+      console.warn('Supabase não configurado — a ferramenta não vai salvar/carregar dados até isso ser preenchido.');
+      return [];
+    }
+    try{
+      const res = await fetch(SUPABASE_URL + '?select=*', {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+      });
+      if(!res.ok) throw new Error('HTTP ' + res.status);
+      const rows = await res.json();
+      return (rows || []).map(toClientRecord);
+    }catch(e){ console.error('loadAll error', e); return []; }
+  }
+
+  async function saveRecord(rec){
+    if(!CONFIGURED){
+      alert('A ferramenta ainda não está configurada com o Supabase. Avise quem administra a planilha/banco.');
+      return false;
+    }
+    try{
+      const payload = Object.assign({}, rec);
+      payload.evidencia_imagem_url = payload.evidencia_imagem || null;
+      delete payload.evidencia_imagem;
+
+      const res = await fetch(SUPABASE_URL + '?on_conflict=id', {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_KEY,
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=merge-duplicates,return=representation'
+        },
+        body: JSON.stringify([payload])
+      });
+      if(!res.ok){
+        const errText = await res.text().catch(()=> '');
+        console.error('save error', res.status, errText);
+        return false;
+      }
+      return true;
+    }catch(e){ console.error('save error', e); return false; }
+  }
+
+  // ---------- tabs ----------
+  document.querySelectorAll('nav.tabs button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('view-' + btn.dataset.view).classList.add('active');
+      if(btn.dataset.view === 'painel') renderPainel();
+      if(btn.dataset.view === 'lancar') renderLancar();
+      if(btn.dataset.view === 'validar') renderValidar();
+    });
+  });
+
+  function updateNavBadges(){
+    const pend = RECORDS.filter(r=>r.status==='pendente').length;
+    const aguard = RECORDS.filter(r=>r.status==='aguardando_validacao').length;
+    const bl = document.getElementById('badge-lancar'); bl.textContent = pend; bl.classList.toggle('zero', pend===0);
+    const bv = document.getElementById('badge-validar'); bv.textContent = aguard; bv.classList.toggle('zero', aguard===0);
+  }
+
+  // ---------- 1. registrar atendimento ----------
+  document.getElementById('in-tipo').addEventListener('change', (e)=>{
+    document.getElementById('in-tipo-outros-wrap').style.display = e.target.value==='Outros' ? 'flex' : 'none';
+  });
+
+  document.getElementById('btn-salvar-envio').addEventListener('click', async ()=>{
+    const matricula = document.getElementById('in-matricula').value.trim();
+    const telefone = document.getElementById('in-telefone').value.trim();
+    const analista = document.getElementById('in-analista').value.trim();
+    let tipo = document.getElementById('in-tipo').value.trim();
+    const tipoOutros = document.getElementById('in-tipo-outros').value.trim();
+    const superintendencia = document.getElementById('in-superintendencia').value;
+    const segmento = document.getElementById('in-segmento').value;
+    const msg = document.getElementById('msg-envio');
+
+    if(!matricula || !analista || !tipo || !superintendencia || !segmento){
+      msg.style.color = 'var(--rose)'; msg.textContent = 'Preencha matrícula, analista, tipo de atendimento, superintendência e segmento.';
+      return;
+    }
+    if(tipo==='Outros' && !tipoOutros){
+      msg.style.color = 'var(--rose)'; msg.textContent = 'Descreva o tipo de atendimento em "Outros".';
+      return;
+    }
+    if(tipo==='Outros') tipo = 'Outros: ' + tipoOutros;
+    const rec = {
+      id: uid(), matricula, telefone, analista, tipo, superintendencia, segmento,
+      data_envio: nowISO(),
+      status: 'pendente', // pendente -> aguardando_validacao -> validado | rejeitado (refere-se à pergunta 1)
+      data_resposta: null,
+      nota_atendimento: null, evidencia_tipo: null, evidencia_imagem: null, evidencia_imagem_nome: null,
+      validado_por: null, data_validacao: null, validacao_obs: null,
+      qualidade_abastecimento: null, prazo_resolucao: null, motivo_contato: null
+    };
+    const ok = await saveRecord(rec);
+    if(ok){
+      RECORDS.push(rec);
+      msg.style.color = 'var(--leaf)'; msg.textContent = 'Atendimento registrado.';
+      document.getElementById('in-matricula').value=''; document.getElementById('in-telefone').value='';
+      document.getElementById('in-tipo').value=''; document.getElementById('in-tipo-outros').value='';
+      document.getElementById('in-tipo-outros-wrap').style.display='none';
+      renderRegistrar(); updateNavBadges();
+      setTimeout(()=>{ msg.textContent=''; }, 3000);
+    } else { msg.style.color = 'var(--rose)'; msg.textContent = 'Erro ao salvar. Tente novamente.'; }
+  });
+
+  function renderRegistrar(){
+    const statusLabel = {
+      pendente:'<span class="badge badge-pendente">⏳ Aguardando resposta</span>',
+      aguardando_validacao:'<span class="badge badge-aguardando">🔎 Aguardando validação</span>',
+      validado:'<span class="badge badge-validado">✅ Validado</span>',
+      rejeitado:'<span class="badge badge-rejeitado">❌ Rejeitado</span>'
+    };
+    const recentes = [...RECORDS].sort((a,b)=> (b.data_envio||'').localeCompare(a.data_envio||'')).slice(0,15);
+    document.getElementById('tbody-recentes').innerHTML = recentes.length===0 ? `<tr class="empty-row"><td colspan="7">Nenhum atendimento registrado ainda.</td></tr>` :
+      recentes.map(r=>`<tr>
+        <td>${escapeHtml(r.matricula)}</td><td>${escapeHtml(r.analista)}</td><td>${escapeHtml(r.tipo||'–')}</td>
+        <td>${escapeHtml(r.superintendencia)}</td><td>${escapeHtml(r.segmento||'–')}</td><td>${fmtDateBR(r.data_envio)}</td><td>${statusLabel[r.status]||r.status}</td>
+      </tr>`).join('');
+  }
+
+  // ---------- 2. lançar respostas ----------
+  function renderLancar(){
+    const busca = (document.getElementById('busca-pendente').value || '').toLowerCase();
+    const pendentes = RECORDS.filter(r=>r.status==='pendente' &&
+      (!busca || r.matricula.toLowerCase().includes(busca) || (r.telefone||'').toLowerCase().includes(busca) || r.analista.toLowerCase().includes(busca))
+    ).sort((a,b)=> (b.data_envio||'').localeCompare(a.data_envio||''));
+
+    const tb = document.getElementById('tbody-pendentes');
+    tb.innerHTML = pendentes.length===0 ? `<tr class="empty-row"><td colspan="5">Nenhum atendimento aguardando lançamento de respostas.</td></tr>` :
+      pendentes.map(r=>`
+        <tr class="${r.id===selectedId?'selected':''}">
+          <td>${escapeHtml(r.matricula)}</td><td>${escapeHtml(r.analista)}</td><td>${escapeHtml(r.tipo||'–')}</td>
+          <td>${fmtDateOnlyBR(r.data_envio)}</td>
+          <td><button class="btn btn-ghost btn-sm" data-select="${r.id}">${r.id===selectedId?'Selecionado':'Selecionar'}</button></td>
+        </tr>
+      `).join('');
+
+    tb.querySelectorAll('[data-select]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{ selectedId = btn.dataset.select; renderLancar(); });
+    });
+
+    renderLancarForm();
+  }
+
+  function renderLancarForm(){
+    const area = document.getElementById('lancar-form-area');
+    const rec = RECORDS.find(r=>r.id===selectedId && r.status==='pendente');
+    if(!rec){ area.innerHTML = `<div class="placeholder-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>Selecione um atendimento na lista acima para lançar as respostas.</div>`; return; }
+
+    area.innerHTML = `
+      <div class="selected-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+        Lançando respostas de <b>${escapeHtml(rec.matricula)}</b> — ${escapeHtml(rec.analista)} · ${escapeHtml(rec.tipo||'')}
+      </div>
+
+      <div class="field span6" style="margin-bottom:18px;">
+        <label>1. Como você avalia a qualidade do atendimento do executivo de contas? <span class="role-tag plr-tag" style="margin-left:4px;">afeta PLR</span></label>
+        <div class="stars" id="form-stars">${[1,2,3,4,5].map(n=>`<button type="button" data-n="${n}">★</button>`).join('')}</div>
+      </div>
+
+      <div class="field span6" style="margin-bottom:18px;">
+        <label>2. Como você avalia a qualidade do seu abastecimento de água?</label>
+        <select id="form-abastecimento">
+          <option value="">Selecione</option>
+          ${OPCOES_ABASTECIMENTO_LANCAR.map(o=>`<option value="${escapeHtml(o)}">${escapeHtml(o)}</option>`).join('')}
+        </select>
+      </div>
+
+      <div class="field span6" style="margin-bottom:18px;">
+        <label>3. Sua solicitação foi resolvida dentro do prazo informado?</label>
+        <select id="form-prazo">
+          <option value="">Selecione</option>
+          ${OPCOES_PRAZO_LANCAR.map(o=>`<option value="${escapeHtml(o)}">${escapeHtml(o)}</option>`).join('')}
+        </select>
+      </div>
+
+      <div class="field span6" style="margin-bottom:8px;">
+        <label>4. Qual foi o motivo do seu contato?</label>
+        <select id="form-motivo">
+          <option value="">Selecione</option>
+          ${OPCOES_MOTIVO_LANCAR.map(o=>`<option value="${escapeHtml(o)}">${escapeHtml(o)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field span6" id="form-motivo-outro-wrap" style="display:none; margin-bottom:18px;">
+        <label>Especifique o motivo</label>
+        <input type="text" id="form-motivo-outro" placeholder="Descreva o motivo">
+      </div>
+
+      <div class="field span6" style="margin-bottom:18px;">
+        <label>Evidência da nota do executivo (pergunta 1) — como foi enviada ao gestor</label>
+        <div class="radio-group">
+          <label><input type="radio" name="form-evidencia" value="encaminhada"> Encaminhei a mensagem</label>
+          <label><input type="radio" name="form-evidencia" value="print"> Enviei print</label>
+          <label><input type="radio" name="form-evidencia" value="ambos"> Ambos</label>
+        </div>
+      </div>
+
+      <div class="field span6" style="margin-bottom:18px;">
+        <label>Anexar print/foto do retorno do cliente <span style="font-weight:500; text-transform:none; letter-spacing:0; color:var(--text-mut);">(recomendado — facilita a validação do gestor)</span></label>
+        <div class="upload-box" id="upload-box">
+          <div class="upload-row">
+            <input type="file" id="form-evidencia-arquivo" accept="image/*">
+          </div>
+          <div id="upload-preview"></div>
+          <div id="upload-msg"></div>
+          <div class="upload-hint">Aceita JPG, PNG ou WEBP. A imagem é redimensionada e comprimida automaticamente antes de salvar.</div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="btn-salvar-respostas">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        Salvar respostas
+      </button>
+      <span id="msg-lancar" style="margin-left:12px; font-size:13px; font-weight:700;"></span>
+    `;
+
+    let notaSelecionada = 0;
+    let evidenciaImagemData = null;
+    let evidenciaImagemNome = null;
+
+    const uploadBox = document.getElementById('upload-box');
+    const uploadPreview = document.getElementById('upload-preview');
+    const uploadMsg = document.getElementById('upload-msg');
+    const fileInput = document.getElementById('form-evidencia-arquivo');
+
+    function renderUploadPreview(){
+      uploadMsg.innerHTML = '';
+      if(!evidenciaImagemData){
+        uploadPreview.innerHTML = '';
+        uploadBox.classList.remove('has-file');
+        return;
+      }
+      uploadBox.classList.add('has-file');
+      uploadPreview.innerHTML = `
+        <div class="upload-thumb" style="margin-top:10px;">
+          <img src="${evidenciaImagemData}" data-lightbox alt="Prévia da evidência">
+          <span class="name">${escapeHtml(evidenciaImagemNome||'evidencia.jpg')}</span>
+          <button type="button" class="remove" id="remove-evidencia">Remover</button>
+        </div>`;
+      document.getElementById('remove-evidencia').addEventListener('click', ()=>{
+        evidenciaImagemData = null; evidenciaImagemNome = null;
+        fileInput.value = '';
+        renderUploadPreview();
+      });
+    }
+
+    function compressImage(file){
+      return new Promise((resolve, reject)=>{
+        if(!file.type.startsWith('image/')){ reject(new Error('tipo')); return; }
+        const reader = new FileReader();
+        reader.onload = (e)=>{
+          const img = new Image();
+          img.onload = ()=>{
+            const maxW = 1000;
+            const scale = Math.min(1, maxW / img.width);
+            const w = Math.max(1, Math.round(img.width * scale));
+            const h = Math.max(1, Math.round(img.height * scale));
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL('image/jpeg', 0.72));
+          };
+          img.onerror = ()=>reject(new Error('imagem'));
+          img.src = e.target.result;
+        };
+        reader.onerror = ()=>reject(new Error('leitura'));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    fileInput.addEventListener('change', async ()=>{
+      const file = fileInput.files && fileInput.files[0];
+      if(!file) return;
+      uploadMsg.innerHTML = '<span style="font-size:12px; color:var(--text-mut);">Processando imagem...</span>';
+      try{
+        const dataUrl = await compressImage(file);
+        if(dataUrl.length > 1_400_000){
+          uploadMsg.innerHTML = '<div class="upload-err">Imagem ainda muito grande após compressão. Tente uma foto com menos resolução.</div>';
+          fileInput.value = '';
+          return;
+        }
+        evidenciaImagemData = dataUrl;
+        evidenciaImagemNome = file.name;
+        renderUploadPreview();
+      }catch(err){
+        uploadMsg.innerHTML = '<div class="upload-err">Não foi possível processar esse arquivo. Envie uma imagem (JPG, PNG ou WEBP).</div>';
+        fileInput.value = '';
+      }
+    });
+
+    const starsEl = document.getElementById('form-stars');
+    starsEl.querySelectorAll('button').forEach(sb=>{
+      sb.addEventListener('click', ()=>{
+        notaSelecionada = parseInt(sb.dataset.n,10);
+        starsEl.querySelectorAll('button').forEach(b=>{ b.classList.toggle('filled', parseInt(b.dataset.n,10) <= notaSelecionada); });
+      });
+    });
+
+    document.getElementById('form-motivo').addEventListener('change', (e)=>{
+      document.getElementById('form-motivo-outro-wrap').style.display = e.target.value==='Outro' ? 'flex' : 'none';
+    });
+
+    document.getElementById('btn-salvar-respostas').addEventListener('click', async ()=>{
+      const msg = document.getElementById('msg-lancar');
+      const abastecimento = document.getElementById('form-abastecimento').value;
+      const prazo = document.getElementById('form-prazo').value;
+      let motivo = document.getElementById('form-motivo').value;
+      const motivoOutro = document.getElementById('form-motivo-outro').value.trim();
+      const evidRadio = document.querySelector('input[name="form-evidencia"]:checked');
+
+      if(!notaSelecionada){ msg.style.color='var(--rose)'; msg.textContent='Selecione a nota da pergunta 1.'; return; }
+      if(!evidRadio){ msg.style.color='var(--rose)'; msg.textContent='Informe como a evidência da pergunta 1 foi enviada ao gestor.'; return; }
+      if(!abastecimento || !prazo || !motivo){ msg.style.color='var(--rose)'; msg.textContent='Responda todas as 4 perguntas.'; return; }
+      if(motivo==='Outro' && !motivoOutro){ msg.style.color='var(--rose)'; msg.textContent='Descreva o motivo do contato.'; return; }
+
+      rec.status = 'aguardando_validacao';
+      rec.data_resposta = todayISO();
+      rec.nota_atendimento = notaSelecionada;
+      rec.evidencia_tipo = evidRadio.value;
+      rec.evidencia_imagem = evidenciaImagemData;
+      rec.evidencia_imagem_nome = evidenciaImagemNome;
+      rec.qualidade_abastecimento = abastecimento;
+      rec.prazo_resolucao = prazo;
+      rec.motivo_contato = motivo==='Outro' ? ('Outro: ' + motivoOutro) : motivo;
+
+      const ok = await saveRecord(rec);
+      if(ok){
+        selectedId = null;
+        renderLancar(); renderRegistrar(); updateNavBadges();
+      } else { msg.style.color='var(--rose)'; msg.textContent='Erro ao salvar. Tente novamente.'; }
+    });
+  }
+  document.getElementById('busca-pendente').addEventListener('input', renderLancar);
+  document.getElementById('busca-validar').addEventListener('input', renderValidar);
+
+  // ---------- 3. validar nota do executivo ----------
+  function renderValidar(){
+    const busca = (document.getElementById('busca-validar').value || '').toLowerCase();
+    const aguardando = RECORDS.filter(r=>r.status==='aguardando_validacao' && (!busca || r.matricula.toLowerCase().includes(busca)))
+      .sort((a,b)=> (b.data_resposta||'').localeCompare(a.data_resposta||''));
+    const tb = document.getElementById('tbody-validar');
+    tb.innerHTML = aguardando.length===0 ? `<tr class="empty-row"><td colspan="6">Nada aguardando validação no momento.</td></tr>` :
+      aguardando.map(r=>`
+        <tr>
+          <td>${escapeHtml(r.matricula)}</td><td>${escapeHtml(r.analista)}</td>
+          <td>${'★'.repeat(r.nota_atendimento)}<span style="color:#D8E2E8">${'★'.repeat(5-r.nota_atendimento)}</span></td>
+          <td>
+            <div class="evid-cell">
+              <span>${EVID_LABEL[r.evidencia_tipo]||'–'}</span>
+              ${r.evidencia_imagem ? `<img class="evid-thumb" src="${r.evidencia_imagem}" data-lightbox alt="Evidência anexada">` : `<span class="evid-none">sem anexo</span>`}
+            </div>
+          </td>
+          <td>
+            <input type="text" class="in-gestor" data-id="${r.id}" placeholder="Seu nome" style="width:100%; margin-bottom:6px; padding:7px 9px; border:1px solid var(--border); border-radius:8px; font-size:12.5px;">
+            <input type="text" class="in-obs" data-id="${r.id}" placeholder="Observação (obrigatória se rejeitar)" style="width:100%; padding:7px 9px; border:1px solid var(--border); border-radius:8px; font-size:12.5px;">
+          </td>
+          <td style="white-space:nowrap;">
+            <button class="btn btn-approve btn-sm" data-approve="${r.id}">Validar</button>
+            <button class="btn btn-reject btn-sm" data-reject="${r.id}" style="margin-top:4px;">Rejeitar</button>
+          </td>
+        </tr>
+      `).join('');
+
+    tb.querySelectorAll('[data-approve], [data-reject]').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        const id = btn.dataset.approve || btn.dataset.reject;
+        const isApprove = !!btn.dataset.approve;
+        const row = btn.closest('tr');
+        const gestor = row.querySelector('.in-gestor').value.trim();
+        const obs = row.querySelector('.in-obs').value.trim();
+        if(!gestor){ alert('Informe o nome do gestor responsável pela validação.'); return; }
+        if(!isApprove && !obs){ alert('Informe uma observação explicando a rejeição.'); return; }
+        const rec = RECORDS.find(r=>r.id===id);
+        if(!rec) return;
+        rec.status = isApprove ? 'validado' : 'rejeitado';
+        rec.validado_por = gestor; rec.data_validacao = todayISO(); rec.validacao_obs = obs || null;
+        btn.disabled = true;
+        const ok = await saveRecord(rec);
+        if(ok){ renderValidar(); renderRegistrar(); updateNavBadges(); } else { btn.disabled=false; alert('Erro ao salvar.'); }
+      });
+    });
+
+    const historico = RECORDS.filter(r=>r.status==='validado' || r.status==='rejeitado')
+      .sort((a,b)=> (b.data_validacao||'').localeCompare(a.data_validacao||'')).slice(0,15);
+    document.getElementById('tbody-historico-validacao').innerHTML = historico.length===0 ? `<tr class="empty-row"><td colspan="6">Ainda sem validações.</td></tr>` :
+      historico.map(r=>`<tr>
+        <td>${escapeHtml(r.matricula)}</td><td>${escapeHtml(r.analista)}</td>
+        <td>${'★'.repeat(r.nota_atendimento)}<span style="color:#D8E2E8">${'★'.repeat(5-r.nota_atendimento)}</span></td>
+        <td><span class="badge badge-${r.status==='validado'?'validado':'rejeitado'}">${r.status==='validado'?'Validado':'Rejeitado'}</span></td>
+        <td>${escapeHtml(r.validado_por||'–')}</td><td>${fmtDateOnlyBR(r.data_validacao)}</td>
+      </tr>`).join('');
+  }
+
+  // ---------- 4. painel ----------
+  function monthOf(iso){ return iso ? iso.slice(0,7) : ''; }
+
+  function populateFilters(){
+    const meses = [...new Set(RECORDS.map(r=>monthOf(r.data_envio)).filter(Boolean))].sort().reverse();
+    const fm = document.getElementById('f-mes'); const curM = fm.value;
+    fm.innerHTML = '<option value="">Todos os meses</option>' + meses.map(m=>`<option value="${m}">${m}</option>`).join('');
+    fm.value = curM;
+    const analistas = [...new Set(RECORDS.map(r=>r.analista).filter(Boolean))].sort();
+    const fa = document.getElementById('f-analista'); const curA = fa.value;
+    fa.innerHTML = '<option value="">Todos os analistas</option>' + analistas.map(a=>`<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
+    fa.value = curA;
+    const tipos = [...new Set(RECORDS.map(r=>r.tipo).filter(Boolean))].sort();
+    const ft = document.getElementById('f-tipo'); const curT = ft.value;
+    ft.innerHTML = '<option value="">Todos os tipos</option>' + tipos.map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+    ft.value = curT;
+    const segmentos = [...new Set(RECORDS.map(r=>r.segmento).filter(Boolean))].sort();
+    const fsg = document.getElementById('f-segmento'); const curSg = fsg.value;
+    fsg.innerHTML = '<option value="">Todos os segmentos</option>' + segmentos.map(s=>`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+    fsg.value = curSg;
+  }
+
+  function filteredRecords(){
+    const mes = document.getElementById('f-mes').value;
+    const sup = document.getElementById('f-superintendencia').value;
+    const an = document.getElementById('f-analista').value;
+    const tipo = document.getElementById('f-tipo').value;
+    const seg = document.getElementById('f-segmento').value;
+    return RECORDS.filter(r=>
+      (!mes || monthOf(r.data_envio)===mes) && (!sup || r.superintendencia===sup) &&
+      (!an || r.analista===an) && (!tipo || r.tipo===tipo) && (!seg || r.segmento===seg)
+    );
+  }
+
+  function groupStats(records, key){
+    const map = {};
+    records.forEach(r=>{
+      const k = r[key] || '—';
+      if(!map[k]) map[k] = { enviados:0, respondidos:0, validados:0, somaNota:0 };
+      map[k].enviados++;
+      if(r.status!=='pendente') map[k].respondidos++;
+      if(r.status==='validado'){ map[k].validados++; map[k].somaNota += r.nota_atendimento; }
+    });
+    return Object.entries(map).map(([k,v])=>({
+      nome:k, enviados:v.enviados, respondidos:v.respondidos, validados:v.validados,
+      nota: v.validados ? (v.somaNota/v.validados).toFixed(1) : '–'
+    })).sort((a,b)=>b.enviados-a.enviados);
+  }
+
+  function fillTable(id, rows){
+    document.getElementById(id).innerHTML = rows.length===0 ? `<tr class="empty-row"><td colspan="5">Sem dados</td></tr>` :
+      rows.map(r=>`<tr><td>${escapeHtml(r.nome)}</td><td>${r.enviados}</td><td>${r.respondidos}</td><td>${r.validados}</td><td>${r.nota}</td></tr>`).join('');
+  }
+
+  function renderDistBar(containerId, counts, colorClass, labelFmt){
+    const maxD = Math.max(1, ...Object.values(counts));
+    const el = document.getElementById(containerId);
+    const entries = Object.entries(counts);
+    if(entries.every(([,c])=>c===0)){ el.innerHTML = `<div class="placeholder-box">Sem respostas ainda.</div>`; return; }
+    el.innerHTML = entries.map(([label,count])=>{
+      const pct = Math.round((count/maxD)*100);
+      return `<div class="dist-row"><span>${escapeHtml(labelFmt?labelFmt(label):label)}</span><div class="dist-track"><div class="dist-fill ${colorClass}" style="width:${pct}%"></div></div><span>${count}</span></div>`;
+    }).join('');
+  }
+
+  function renderPainel(){
+    populateFilters();
+    const records = filteredRecords();
+    const enviados = records.length;
+    const respondidos = records.filter(r=>r.status!=='pendente').length;
+    const validados = records.filter(r=>r.status==='validado').length;
+    const abstencaoPct = enviados ? Math.round(((enviados-respondidos)/enviados)*100) : 0;
+    const respostaPct = enviados ? Math.round((respondidos/enviados)*100) : 0;
+    const somaNota = records.reduce((s,r)=> r.status==='validado' ? s + r.nota_atendimento : s, 0);
+    const notaMedia = validados ? (somaNota/validados).toFixed(1) : '–';
+    const validadosAltos = records.filter(r=>r.status==='validado' && r.nota_atendimento>=4).length;
+    const pctPLR = validados ? (validadosAltos/validados*100) : null;
+
+    document.getElementById('kpi-enviados').textContent = enviados;
+    document.getElementById('kpi-respondidos').textContent = respondidos;
+    document.getElementById('kpi-abstencao').textContent = abstencaoPct + '%';
+    document.getElementById('kpi-validados').textContent = validados;
+    document.getElementById('kpi-nota').textContent = notaMedia === '–' ? '–' : notaMedia + ' ★';
+
+    const kpiPlrEl = document.getElementById('kpi-plr');
+    kpiPlrEl.classList.remove('leaf','rose');
+    if(pctPLR === null){
+      kpiPlrEl.textContent = '–';
+    } else {
+      kpiPlrEl.textContent = pctPLR.toFixed(1) + '%';
+      kpiPlrEl.classList.add(pctPLR >= 95 ? 'leaf' : 'rose');
+    }
+
+    const waveFill = document.getElementById('wave-fill');
+    const fillHeight = 118 * (respostaPct/100);
+    waveFill.setAttribute('y', 118 - fillHeight); waveFill.setAttribute('height', fillHeight);
+    document.getElementById('gauge-pct').textContent = respostaPct + '%';
+
+    fillTable('tbody-por-analista', groupStats(records, 'analista'));
+    fillTable('tbody-por-superint', groupStats(records, 'superintendencia'));
+    fillTable('tbody-por-tipo', groupStats(records, 'tipo'));
+    fillTable('tbody-por-segmento', groupStats(records, 'segmento'));
+
+    const dist = [0,0,0,0,0];
+    records.forEach(r=>{ if(r.status==='validado' && r.nota_atendimento>=1 && r.nota_atendimento<=5) dist[r.nota_atendimento-1]++; });
+    const maxD1 = Math.max(1, ...dist);
+    document.getElementById('dist-bars').innerHTML = [5,4,3,2,1].map(n=>{
+      const count = dist[n-1]; const pct = Math.round((count/maxD1)*100);
+      return `<div class="dist-row stars-row"><span>${n} ★</span><div class="dist-track"><div class="dist-fill" style="width:${pct}%"></div></div><span>${count}</span></div>`;
+    }).join('');
+
+    // Pergunta 2: abastecimento
+    const respondentes = records.filter(r=>r.status!=='pendente');
+    const abastCounts = {}; OPCOES_ABASTECIMENTO.forEach(o=>abastCounts[o]=0);
+    respondentes.forEach(r=>{ if(r.qualidade_abastecimento) abastCounts[r.qualidade_abastecimento] = (abastCounts[r.qualidade_abastecimento]||0)+1; });
+    renderDistBar('dist-abastecimento', abastCounts, 'leaf');
+
+    // Pergunta 3: prazo
+    const prazoCounts = {}; OPCOES_PRAZO.forEach(o=>prazoCounts[o]=0);
+    respondentes.forEach(r=>{ if(r.prazo_resolucao) prazoCounts[r.prazo_resolucao] = (prazoCounts[r.prazo_resolucao]||0)+1; });
+    renderDistBar('dist-prazo', prazoCounts, 'water');
+
+    // Pergunta 4: motivo
+    const motivoCounts = {};
+    respondentes.forEach(r=>{
+      if(!r.motivo_contato) return;
+      const label = r.motivo_contato.startsWith('Outro:') ? 'Outro' : r.motivo_contato;
+      motivoCounts[label] = (motivoCounts[label]||0)+1;
+    });
+    renderDistBar('dist-motivo', motivoCounts, 'amber');
+  }
+
+  ['f-mes','f-superintendencia','f-analista','f-tipo','f-segmento'].forEach(id=>{
+    document.getElementById(id).addEventListener('change', renderPainel);
+  });
+
+  // ---------- export ----------
+  function buildCSVString(){
+    const records = filteredRecords();
+    const header = ['Matricula','Telefone','Analista','Tipo','Superintendencia','Segmento','Registrado em','Status',
+      'Nota executivo','Evidencia','Imagem anexada','Validado por','Data validacao','Observacao validacao',
+      'Qualidade abastecimento','Prazo resolucao','Motivo contato'];
+    const rows = records.map(r=>[
+      r.matricula, r.telefone||'', r.analista, r.tipo||'', r.superintendencia, r.segmento||'',
+      fmtDateBR(r.data_envio), r.status, r.nota_atendimento||'', EVID_LABEL[r.evidencia_tipo]||'',
+      r.evidencia_imagem ? 'Sim' : 'Não',
+      r.validado_por||'', fmtDateOnlyBR(r.data_validacao), r.validacao_obs||'',
+      r.qualidade_abastecimento||'', r.prazo_resolucao||'', r.motivo_contato||''
+    ]);
+    return [header, ...rows].map(row => row.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(';')).join('\n');
+  }
+
+  document.getElementById('btn-export').addEventListener('click', ()=>{
+    const csv = buildCSVString();
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'pesquisa_satisfacao_atendimento.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url), 1500);
+  });
+
+  const csvModal = document.getElementById('csv-modal');
+  const csvModalTextarea = document.getElementById('csv-modal-textarea');
+  function openCsvModal(text){
+    csvModalTextarea.value = text;
+    csvModal.classList.add('open');
+    setTimeout(()=>{ csvModalTextarea.focus(); csvModalTextarea.select(); }, 50);
+  }
+  function closeCsvModal(){ csvModal.classList.remove('open'); }
+  document.getElementById('csv-modal-close').addEventListener('click', closeCsvModal);
+  csvModal.addEventListener('click', (e)=>{ if(e.target === csvModal) closeCsvModal(); });
+
+  document.getElementById('btn-copy-csv').addEventListener('click', async ()=>{
+    const msg = document.getElementById('msg-import');
+    const csv = buildCSVString();
+    const ok = await copyToClipboard(csv);
+    if(ok){
+      msg.style.color = 'var(--leaf)'; msg.textContent = 'CSV copiado! Cole (Ctrl+V) num Bloco de Notas ou numa planilha.';
+      setTimeout(()=>{ msg.textContent=''; }, 4000);
+    } else {
+      openCsvModal(csv);
+    }
+  });
+
+  // ---------- import ----------
+  function parseCSV(text){
+    if(text.charCodeAt(0)===0xFEFF) text = text.slice(1);
+    text = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+    const rows = []; let row = []; let field = ''; let inQuotes = false;
+    for(let i=0;i<text.length;i++){
+      const c = text[i];
+      if(inQuotes){
+        if(c === '"'){ if(text[i+1] === '"'){ field += '"'; i++; } else { inQuotes = false; } }
+        else field += c;
+      } else {
+        if(c === '"') inQuotes = true;
+        else if(c === ';'){ row.push(field); field = ''; }
+        else if(c === '\n'){ row.push(field); rows.push(row); row = []; field = ''; }
+        else field += c;
+      }
+    }
+    if(field !== '' || row.length){ row.push(field); rows.push(row); }
+    return rows.filter(r => !(r.length===1 && r[0]===''));
+  }
+
+  function parseDataEnvioBR(str){
+    if(!str) return nowISO();
+    const m = str.match(/(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2}))?/);
+    if(!m) return nowISO();
+    const [, dd, mm, yyyy, hh='00', min='00'] = m;
+    const d = new Date(`${yyyy}-${mm}-${dd}T${hh}:${min}:00`);
+    return isNaN(d) ? nowISO() : d.toISOString();
+  }
+
+  function parseDataOnlyBR(str){
+    if(!str) return null;
+    const m = str.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+    if(!m) return null;
+    const [, dd, mm, yyyy] = m;
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  document.getElementById('btn-import').addEventListener('click', ()=>{
+    document.getElementById('input-import-csv').click();
+  });
+
+  document.getElementById('input-import-csv').addEventListener('change', async (e)=>{
+    const file = e.target.files && e.target.files[0];
+    const msg = document.getElementById('msg-import');
+    if(!file) return;
+    msg.style.color = 'var(--text-mut)'; msg.textContent = 'Lendo arquivo...';
+    try{
+      const text = await file.text();
+      const rows = parseCSV(text);
+      if(rows.length < 2){ msg.style.color='var(--rose)'; msg.textContent='Arquivo vazio ou inválido.'; e.target.value=''; return; }
+
+      const header = rows[0].map(h=>h.trim().toLowerCase());
+      const idx = (...names)=>{ for(const n of names){ const i = header.indexOf(n); if(i!==-1) return i; } return -1; };
+      const EVID_REVERSE = { 'mensagem encaminhada':'encaminhada', 'print enviado':'print', 'mensagem + print':'ambos' };
+      const col = {
+        matricula: idx('matricula'), telefone: idx('telefone'), analista: idx('analista'),
+        tipo: idx('tipo'), superintendencia: idx('superintendencia'), segmento: idx('segmento'),
+        registrado_em: idx('registrado em'), status: idx('status'), nota: idx('nota executivo'),
+        evidencia: idx('evidencia'),
+        validado_por: idx('validado por'), data_validacao: idx('data validacao'),
+        obs: idx('observacao validacao'), abastecimento: idx('qualidade abastecimento'),
+        prazo: idx('prazo resolucao'), motivo: idx('motivo contato')
+      };
+      if(col.matricula===-1 || col.analista===-1){
+        msg.style.color='var(--rose)'; msg.textContent='Não reconheci as colunas do CSV. Confirme se é um export desta ferramenta.';
+        e.target.value=''; return;
+      }
+
+      const get = (r,i)=> i===-1 ? '' : (r[i]||'').trim();
+      const statusValidos = ['pendente','aguardando_validacao','validado','rejeitado'];
+      let importados = 0, ignorados = 0;
+
+      for(let i=1;i<rows.length;i++){
+        const r = rows[i];
+        if(!r || r.every(c=>c==='')) continue;
+        const matricula = get(r,col.matricula);
+        if(!matricula) continue;
+
+        const dataEnvioISO = parseDataEnvioBR(get(r,col.registrado_em));
+        const analista = get(r,col.analista);
+        const jaExiste = RECORDS.some(rec => rec.matricula===matricula && rec.analista===analista &&
+          rec.data_envio && rec.data_envio.slice(0,16)===dataEnvioISO.slice(0,16));
+        if(jaExiste){ ignorados++; continue; }
+
+        const statusBruto = get(r,col.status);
+        const status = statusValidos.includes(statusBruto) ? statusBruto : 'pendente';
+        const notaStr = get(r,col.nota);
+        const nota = notaStr ? parseInt(notaStr,10) : null;
+        const dataValidacao = parseDataOnlyBR(get(r,col.data_validacao));
+        const evidLabel = get(r,col.evidencia).toLowerCase();
+
+        const rec = {
+          id: uid(), matricula, telefone: get(r,col.telefone), analista,
+          tipo: get(r,col.tipo) || null, superintendencia: get(r,col.superintendencia) || null,
+          segmento: get(r,col.segmento) || null,
+          data_envio: dataEnvioISO,
+          status,
+          data_resposta: status!=='pendente' ? (dataValidacao || dataEnvioISO.slice(0,10)) : null,
+          nota_atendimento: Number.isFinite(nota) ? nota : null,
+          evidencia_tipo: EVID_REVERSE[evidLabel] || null,
+          evidencia_imagem: null, evidencia_imagem_nome: null,
+          validado_por: get(r,col.validado_por) || null,
+          data_validacao: dataValidacao,
+          validacao_obs: get(r,col.obs) || null,
+          qualidade_abastecimento: get(r,col.abastecimento) || null,
+          prazo_resolucao: get(r,col.prazo) || null,
+          motivo_contato: get(r,col.motivo) || null
+        };
+
+        const ok = await saveRecord(rec);
+        if(ok){ RECORDS.push(rec); importados++; } else { ignorados++; }
+      }
+
+      renderRegistrar(); renderLancar(); renderValidar(); renderPainel(); updateNavBadges();
+      msg.style.color = importados>0 ? 'var(--leaf)' : 'var(--rose)';
+      msg.textContent = `${importados} registro(s) importado(s)` + (ignorados ? `, ${ignorados} ignorado(s) (duplicado ou sem matrícula/analista)` : '') + '. Imagens de evidência não são recuperadas via CSV.';
+    }catch(err){
+      console.error(err);
+      msg.style.color = 'var(--rose)'; msg.textContent = 'Erro ao ler o arquivo. Confirme se é um .csv válido.';
+    } finally {
+      e.target.value = '';
+    }
+  });
+
+  // ---------- lightbox ----------
+  const lightboxEl = document.getElementById('lightbox');
+  const lightboxImg = document.getElementById('lightbox-img');
+  document.addEventListener('click', (e)=>{
+    const trigger = e.target.closest('[data-lightbox]');
+    if(trigger){ lightboxImg.src = trigger.src; lightboxEl.classList.add('open'); }
+  });
+  function closeLightbox(){ lightboxEl.classList.remove('open'); lightboxImg.src = ''; }
+  document.getElementById('lightbox-close').addEventListener('click', closeLightbox);
+  lightboxEl.addEventListener('click', (e)=>{ if(e.target === lightboxEl) closeLightbox(); });
+  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeLightbox(); });
+
+  // ---------- init ----------
+  (async function init(){
+    if(!CONFIGURED){
+      const banner = document.createElement('div');
+      banner.style.cssText = 'background:var(--rose-soft); border:1px solid var(--rose-line); color:var(--rose); padding:12px 16px; border-radius:12px; margin:0 0 16px; font-size:13px; font-weight:600;';
+      banner.textContent = '⚠️ Esta ferramenta ainda não está conectada ao banco de dados (Supabase). Configure a URL/chave no código antes de usar — os dados não serão salvos até isso ser feito.';
+      document.querySelector('.app').prepend(banner);
+    }
+    renderPollTemplates();
+    RECORDS = await loadAll();
+    renderRegistrar(); renderLancar(); renderValidar(); renderPainel(); updateNavBadges();
+  })();
+
+})();
+</script>
+</body>
+</html>
