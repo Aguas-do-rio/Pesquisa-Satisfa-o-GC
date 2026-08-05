@@ -392,12 +392,17 @@
             <option>Segunda via de conta</option>
             <option>Esclarecimento de dúvidas</option>
             <option>Atualização cadastral</option>
+            <option>Não foi possível realizar a pesquisa</option>
             <option>Outros</option>
           </select>
         </div>
         <div class="field span2" id="in-tipo-outros-wrap" style="display:none;">
           <label>Especifique o tipo de atendimento</label>
           <input type="text" id="in-tipo-outros" placeholder="Descreva o tipo de atendimento">
+        </div>
+        <div class="field span2" id="in-os-impossibilidade-wrap" style="display:none;">
+          <label>Número da OS que justifica a impossibilidade</label>
+          <input type="text" id="in-os-impossibilidade" placeholder="Ex: 123456">
         </div>
         <div class="field">
           <label>Superintendência</label>
@@ -577,6 +582,29 @@
       </div>
     </div>
 
+    <div class="section-divider">
+      <span class="eyebrow-sm">Metas por executivo</span>
+      <div class="line"></div>
+    </div>
+
+    <div class="kpi-row" style="margin-bottom:0;">
+      <div class="kpi"><div class="label">Carteira total</div><div class="value" id="meta-carteira-total">0</div></div>
+      <div class="kpi"><div class="label">Meta consolidada (ajustada)</div><div class="value" id="meta-consolidada">0</div></div>
+      <div class="kpi leaf"><div class="label">Validados (com nota)</div><div class="value leaf" id="meta-validados">0</div></div>
+      <div class="kpi leaf"><div class="label">% atingido</div><div class="value leaf" id="meta-pct-atingido">0%</div></div>
+    </div>
+
+    <div class="card">
+      <h2>Metas por executivo <span style="font-weight:500; color:var(--text-mut); font-size:12px;">(atualiza automaticamente a cada validação)</span></h2>
+      <p class="sub">Casos de "Não foi possível realizar a pesquisa" reduzem a meta do executivo, sem afetar a nota final dele.</p>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead><tr><th>Executivo</th><th>Carteira</th><th>Meta original</th><th>Não foi possível (validados)</th><th>Meta ajustada</th><th>Validados c/ nota</th><th>% atingido</th><th>Nota média</th></tr></thead>
+          <tbody id="tbody-metas"><tr class="empty-row"><td colspan="8">Carregando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
     <div class="two-col" style="margin-top:20px;">
       <div class="card">
         <h2>Por analista <span style="font-weight:500; color:var(--text-mut); font-size:12px;">(nota considera só validados)</span></h2>
@@ -677,9 +705,11 @@
 (function(){
   // ======= CONFIGURAÇÃO — Supabase =======
   const SUPABASE_URL = 'https://yidsjyfcuzytkejctqfp.supabase.co/rest/v1/registros';
+  const SUPABASE_BASE_URL = 'https://yidsjyfcuzytkejctqfp.supabase.co/rest/v1';
   const SUPABASE_KEY = 'sb_publishable_dJWDHA-YGrM3jIXgFBuk1w_ZxZSaHBQ';
   // =========================================
   let RECORDS = [];
+  let METAS = [];
   let selectedId = null;
 
   const OPCOES_ABASTECIMENTO = ['Ótimo — contínuo e sem problemas','Bom — falhas eventuais e rápidas','Regular — falhas frequentes','Ruim — abastecimento instável','Péssimo — sem abastecimento'];
@@ -790,6 +820,17 @@
     }catch(e){ console.error('loadAll error', e); return []; }
   }
 
+  async function loadMetas(){
+    if(!CONFIGURED) return [];
+    try{
+      const res = await fetch(SUPABASE_BASE_URL + '/metas_executivos?select=*', {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+      });
+      if(!res.ok) throw new Error('HTTP ' + res.status);
+      return await res.json();
+    }catch(e){ console.error('loadMetas error', e); return []; }
+  }
+
   async function saveRecord(rec){
     if(!CONFIGURED){
       alert('A ferramenta ainda não está configurada com o Supabase. Avise quem administra a planilha/banco.');
@@ -840,8 +881,10 @@
   }
 
   // ---------- 1. registrar atendimento ----------
+  const TIPO_IMPOSSIBILIDADE = 'Não foi possível realizar a pesquisa';
   document.getElementById('in-tipo').addEventListener('change', (e)=>{
     document.getElementById('in-tipo-outros-wrap').style.display = e.target.value==='Outros' ? 'flex' : 'none';
+    document.getElementById('in-os-impossibilidade-wrap').style.display = e.target.value===TIPO_IMPOSSIBILIDADE ? 'flex' : 'none';
   });
 
   document.getElementById('btn-salvar-envio').addEventListener('click', async ()=>{
@@ -850,6 +893,7 @@
     const analista = document.getElementById('in-analista').value.trim();
     let tipo = document.getElementById('in-tipo').value.trim();
     const tipoOutros = document.getElementById('in-tipo-outros').value.trim();
+    const numeroOsImpossibilidade = document.getElementById('in-os-impossibilidade').value.trim();
     const superintendencia = document.getElementById('in-superintendencia').value;
     const segmento = document.getElementById('in-segmento').value;
     const msg = document.getElementById('msg-envio');
@@ -862,9 +906,14 @@
       msg.style.color = 'var(--rose)'; msg.textContent = 'Descreva o tipo de atendimento em "Outros".';
       return;
     }
+    if(tipo===TIPO_IMPOSSIBILIDADE && !numeroOsImpossibilidade){
+      msg.style.color = 'var(--rose)'; msg.textContent = 'Informe o número da OS que justifica a impossibilidade da pesquisa.';
+      return;
+    }
     if(tipo==='Outros') tipo = 'Outros: ' + tipoOutros;
     const rec = {
       id: uid(), matricula, telefone, analista, tipo, superintendencia, segmento,
+      numero_os_impossibilidade: tipo===TIPO_IMPOSSIBILIDADE ? numeroOsImpossibilidade : null,
       data_envio: nowISO(),
       status: 'pendente', // pendente -> aguardando_validacao -> validado | rejeitado (refere-se à pergunta 1)
       data_resposta: null,
@@ -879,6 +928,8 @@
       document.getElementById('in-matricula').value=''; document.getElementById('in-telefone').value='';
       document.getElementById('in-tipo').value=''; document.getElementById('in-tipo-outros').value='';
       document.getElementById('in-tipo-outros-wrap').style.display='none';
+      document.getElementById('in-os-impossibilidade').value='';
+      document.getElementById('in-os-impossibilidade-wrap').style.display='none';
       renderRegistrar(); updateNavBadges();
       setTimeout(()=>{ msg.textContent=''; }, 3000);
     } else { msg.style.color = 'var(--rose)'; msg.textContent = 'Erro ao salvar. Tente novamente.'; }
@@ -927,6 +978,8 @@
     const area = document.getElementById('lancar-form-area');
     const rec = RECORDS.find(r=>r.id===selectedId && r.status==='pendente');
     if(!rec){ area.innerHTML = `<div class="placeholder-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>Selecione um atendimento na lista acima para lançar as respostas.</div>`; return; }
+
+    if(rec.tipo === TIPO_IMPOSSIBILIDADE){ renderLancarFormImpossibilidade(area, rec); return; }
 
     area.innerHTML = `
       <div class="selected-box">
@@ -1111,6 +1164,121 @@
       } else { msg.style.color='var(--rose)'; msg.textContent='Erro ao salvar. Tente novamente.'; }
     });
   }
+
+  function renderLancarFormImpossibilidade(area, rec){
+    area.innerHTML = `
+      <div class="selected-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+        Lançando respostas de <b>${escapeHtml(rec.matricula)}</b> — ${escapeHtml(rec.analista)} · ${escapeHtml(rec.tipo||'')}
+      </div>
+      <div class="limit-note" style="margin-top:0; margin-bottom:18px; max-width:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg>
+        <span>Como não foi possível realizar a pesquisa, este registro não terá nota — ele reduz a meta do executivo, mas não afeta a nota final. Anexe a evidência (print da OS ${escapeHtml(rec.numero_os_impossibilidade||'')}) para validação da gestora.</span>
+      </div>
+
+      <div class="field span6" style="margin-bottom:18px;">
+        <label>Anexar evidência (print da OS)</label>
+        <div class="upload-box" id="upload-box">
+          <div class="upload-row">
+            <input type="file" id="form-evidencia-arquivo" accept="image/*">
+          </div>
+          <div id="upload-preview"></div>
+          <div id="upload-msg"></div>
+          <div class="upload-hint">Aceita JPG, PNG ou WEBP. A imagem é redimensionada e comprimida automaticamente antes de salvar.</div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="btn-salvar-respostas">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        Salvar
+      </button>
+      <span id="msg-lancar" style="margin-left:12px; font-size:13px; font-weight:700;"></span>
+    `;
+
+    let evidenciaImagemData = null;
+    let evidenciaImagemNome = null;
+    const uploadBox = document.getElementById('upload-box');
+    const uploadPreview = document.getElementById('upload-preview');
+    const uploadMsg = document.getElementById('upload-msg');
+    const fileInput = document.getElementById('form-evidencia-arquivo');
+
+    function renderUploadPreview(){
+      uploadMsg.innerHTML = '';
+      if(!evidenciaImagemData){ uploadPreview.innerHTML = ''; uploadBox.classList.remove('has-file'); return; }
+      uploadBox.classList.add('has-file');
+      uploadPreview.innerHTML = `
+        <div class="upload-thumb" style="margin-top:10px;">
+          <img src="${evidenciaImagemData}" data-lightbox alt="Prévia da evidência">
+          <span class="name">${escapeHtml(evidenciaImagemNome||'evidencia.jpg')}</span>
+          <button type="button" class="remove" id="remove-evidencia">Remover</button>
+        </div>`;
+      document.getElementById('remove-evidencia').addEventListener('click', ()=>{
+        evidenciaImagemData = null; evidenciaImagemNome = null; fileInput.value = ''; renderUploadPreview();
+      });
+    }
+
+    function compressImage(file){
+      return new Promise((resolve, reject)=>{
+        if(!file.type.startsWith('image/')){ reject(new Error('tipo')); return; }
+        const reader = new FileReader();
+        reader.onload = (e)=>{
+          const img = new Image();
+          img.onload = ()=>{
+            const maxW = 1000;
+            const scale = Math.min(1, maxW / img.width);
+            const w = Math.max(1, Math.round(img.width * scale));
+            const h = Math.max(1, Math.round(img.height * scale));
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL('image/jpeg', 0.72));
+          };
+          img.onerror = ()=>reject(new Error('imagem'));
+          img.src = e.target.result;
+        };
+        reader.onerror = ()=>reject(new Error('leitura'));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    fileInput.addEventListener('change', async ()=>{
+      const file = fileInput.files && fileInput.files[0];
+      if(!file) return;
+      uploadMsg.innerHTML = '<span style="font-size:12px; color:var(--text-mut);">Processando imagem...</span>';
+      try{
+        const dataUrl = await compressImage(file);
+        if(dataUrl.length > 1_400_000){
+          uploadMsg.innerHTML = '<div class="upload-err">Imagem ainda muito grande após compressão. Tente uma foto com menos resolução.</div>';
+          fileInput.value = ''; return;
+        }
+        evidenciaImagemData = dataUrl; evidenciaImagemNome = file.name;
+        renderUploadPreview();
+      }catch(err){
+        uploadMsg.innerHTML = '<div class="upload-err">Não foi possível processar esse arquivo. Envie uma imagem (JPG, PNG ou WEBP).</div>';
+        fileInput.value = '';
+      }
+    });
+
+    document.getElementById('btn-salvar-respostas').addEventListener('click', async ()=>{
+      const msg = document.getElementById('msg-lancar');
+      rec.status = 'aguardando_validacao';
+      rec.data_resposta = todayISO();
+      rec.nota_atendimento = null;
+      rec.evidencia_tipo = null;
+      rec.evidencia_imagem = evidenciaImagemData;
+      rec.evidencia_imagem_nome = evidenciaImagemNome;
+      rec.qualidade_abastecimento = null;
+      rec.prazo_resolucao = null;
+      rec.motivo_contato = null;
+
+      const ok = await saveRecord(rec);
+      if(ok){
+        selectedId = null;
+        renderLancar(); renderRegistrar(); updateNavBadges();
+      } else { msg.style.color='var(--rose)'; msg.textContent='Erro ao salvar. Tente novamente.'; }
+    });
+  }
+
   document.getElementById('busca-pendente').addEventListener('input', renderLancar);
   document.getElementById('busca-validar').addEventListener('input', renderValidar);
 
@@ -1124,12 +1292,13 @@
       aguardando.map(r=>`
         <tr>
           <td>${escapeHtml(r.matricula)}</td><td>${escapeHtml(r.analista)}</td>
-          <td>${'★'.repeat(r.nota_atendimento)}<span style="color:#D8E2E8">${'★'.repeat(5-r.nota_atendimento)}</span></td>
+          <td>${r.nota_atendimento ? '★'.repeat(r.nota_atendimento) + `<span style="color:#D8E2E8">${'★'.repeat(5-r.nota_atendimento)}</span>` : '<span class="evid-none">sem nota</span>'}</td>
           <td>
             <div class="evid-cell">
               <span>${EVID_LABEL[r.evidencia_tipo]||'–'}</span>
               ${r.evidencia_imagem ? `<img class="evid-thumb" src="${r.evidencia_imagem}" data-lightbox alt="Evidência anexada">` : `<span class="evid-none">sem anexo</span>`}
             </div>
+            <div style="font-size:11px; color:var(--text-mut); margin-top:3px;">${escapeHtml(r.tipo||'–')}${r.numero_os_impossibilidade ? ' · OS ' + escapeHtml(r.numero_os_impossibilidade) : ''}</div>
           </td>
           <td>
             <input type="text" class="in-gestor" data-id="${r.id}" placeholder="Seu nome" style="width:100%; margin-bottom:6px; padding:7px 9px; border:1px solid var(--border); border-radius:8px; font-size:12.5px;">
@@ -1157,7 +1326,7 @@
         rec.validado_por = gestor; rec.data_validacao = todayISO(); rec.validacao_obs = obs || null;
         btn.disabled = true;
         const ok = await saveRecord(rec);
-        if(ok){ renderValidar(); renderRegistrar(); updateNavBadges(); } else { btn.disabled=false; alert('Erro ao salvar.'); }
+        if(ok){ renderValidar(); renderRegistrar(); renderPainel(); updateNavBadges(); } else { btn.disabled=false; alert('Erro ao salvar.'); }
       });
     });
 
@@ -1166,7 +1335,7 @@
     document.getElementById('tbody-historico-validacao').innerHTML = historico.length===0 ? `<tr class="empty-row"><td colspan="6">Ainda sem validações.</td></tr>` :
       historico.map(r=>`<tr>
         <td>${escapeHtml(r.matricula)}</td><td>${escapeHtml(r.analista)}</td>
-        <td>${'★'.repeat(r.nota_atendimento)}<span style="color:#D8E2E8">${'★'.repeat(5-r.nota_atendimento)}</span></td>
+        <td>${r.nota_atendimento ? '★'.repeat(r.nota_atendimento) + `<span style="color:#D8E2E8">${'★'.repeat(5-r.nota_atendimento)}</span>` : '<span class="evid-none">sem nota</span>'}</td>
         <td><span class="badge badge-${r.status==='validado'?'validado':'rejeitado'}">${r.status==='validado'?'Validado':'Rejeitado'}</span></td>
         <td>${escapeHtml(r.validado_por||'–')}</td><td>${fmtDateOnlyBR(r.data_validacao)}</td>
       </tr>`).join('');
@@ -1210,16 +1379,64 @@
     const map = {};
     records.forEach(r=>{
       const k = r[key] || '—';
-      if(!map[k]) map[k] = { enviados:0, respondidos:0, validados:0, somaNota:0 };
+      if(!map[k]) map[k] = { enviados:0, respondidos:0, validados:0, validadosComNota:0, somaNota:0 };
       map[k].enviados++;
       if(r.status!=='pendente') map[k].respondidos++;
-      if(r.status==='validado'){ map[k].validados++; map[k].somaNota += r.nota_atendimento; }
+      if(r.status==='validado'){
+        map[k].validados++;
+        if(r.nota_atendimento!=null){ map[k].validadosComNota++; map[k].somaNota += r.nota_atendimento; }
+      }
     });
     return Object.entries(map).map(([k,v])=>({
       nome:k, enviados:v.enviados, respondidos:v.respondidos, validados:v.validados,
-      nota: v.validados ? (v.somaNota/v.validados).toFixed(1) : '–'
+      nota: v.validadosComNota ? (v.somaNota/v.validadosComNota).toFixed(1) : '–'
     })).sort((a,b)=>b.enviados-a.enviados);
   }
+
+  function renderMetas(){
+    const tbody = document.getElementById('tbody-metas');
+    if(!tbody) return;
+    if(METAS.length === 0){
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="8">Nenhuma meta cadastrada (tabela metas_executivos vazia).</td></tr>';
+      return;
+    }
+    let somaCarteira = 0, somaMetaAjustada = 0, somaValidadosComNota = 0;
+    const linhas = METAS.map(m=>{
+      const doAnalista = RECORDS.filter(r=>r.analista===m.analista);
+      const impossibilidadeValidada = doAnalista.filter(r=>r.status==='validado' && r.tipo===TIPO_IMPOSSIBILIDADE).length;
+      const validadosComNota = doAnalista.filter(r=>r.status==='validado' && r.nota_atendimento!=null).length;
+      const metaAjustada = Math.max(0, (m.meta_quantidade||0) - impossibilidadeValidada);
+      const pctAtingido = metaAjustada ? (validadosComNota/metaAjustada*100) : 0;
+      const somaNotaAnalista = doAnalista.reduce((s,r)=> (r.status==='validado' && r.nota_atendimento!=null) ? s + r.nota_atendimento : s, 0);
+      const notaMediaAnalista = validadosComNota ? (somaNotaAnalista/validadosComNota).toFixed(1) : '–';
+
+      somaCarteira += (m.carteira_total||0);
+      somaMetaAjustada += metaAjustada;
+      somaValidadosComNota += validadosComNota;
+
+      return { m, impossibilidadeValidada, validadosComNota, metaAjustada, pctAtingido, notaMediaAnalista };
+    }).sort((a,b)=> b.pctAtingido - a.pctAtingido);
+
+    tbody.innerHTML = linhas.map(({m,impossibilidadeValidada,validadosComNota,metaAjustada,pctAtingido,notaMediaAnalista})=>{
+      const cor = pctAtingido >= 100 ? 'var(--leaf)' : pctAtingido >= 70 ? 'var(--amber)' : 'var(--rose)';
+      return `<tr>
+        <td>${escapeHtml(m.analista)}</td>
+        <td>${m.carteira_total||0}</td>
+        <td>${m.meta_quantidade||0}</td>
+        <td>${impossibilidadeValidada}</td>
+        <td>${metaAjustada}</td>
+        <td>${validadosComNota}</td>
+        <td style="color:${cor}; font-weight:700;">${pctAtingido.toFixed(0)}%</td>
+        <td>${notaMediaAnalista === '–' ? '–' : notaMediaAnalista + ' ★'}</td>
+      </tr>`;
+    }).join('');
+
+    document.getElementById('meta-carteira-total').textContent = somaCarteira.toLocaleString('pt-BR');
+    document.getElementById('meta-consolidada').textContent = somaMetaAjustada.toLocaleString('pt-BR');
+    document.getElementById('meta-validados').textContent = somaValidadosComNota.toLocaleString('pt-BR');
+    document.getElementById('meta-pct-atingido').textContent = somaMetaAjustada ? (somaValidadosComNota/somaMetaAjustada*100).toFixed(1).replace('.',',') + '%' : '0%';
+  }
+
 
   function fillTable(id, rows){
     document.getElementById(id).innerHTML = rows.length===0 ? `<tr class="empty-row"><td colspan="5">Sem dados</td></tr>` :
@@ -1245,10 +1462,13 @@
     const validados = records.filter(r=>r.status==='validado').length;
     const abstencaoPct = enviados ? Math.round(((enviados-respondidos)/enviados)*100) : 0;
     const respostaPct = enviados ? Math.round((respondidos/enviados)*100) : 0;
-    const somaNota = records.reduce((s,r)=> r.status==='validado' ? s + r.nota_atendimento : s, 0);
-    const notaMedia = validados ? (somaNota/validados).toFixed(1) : '–';
-    const validadosAltos = records.filter(r=>r.status==='validado' && r.nota_atendimento>=4).length;
-    const pctPLR = validados ? (validadosAltos/validados*100) : null;
+    // Registros "Não foi possível realizar a pesquisa" têm nota nula por definição —
+    // entram no total de validados, mas não contam para nota média nem PLR.
+    const validadosComNota = records.filter(r=>r.status==='validado' && r.nota_atendimento!=null);
+    const somaNota = validadosComNota.reduce((s,r)=> s + r.nota_atendimento, 0);
+    const notaMedia = validadosComNota.length ? (somaNota/validadosComNota.length).toFixed(1) : '–';
+    const validadosAltos = validadosComNota.filter(r=>r.nota_atendimento>=4).length;
+    const pctPLR = validadosComNota.length ? (validadosAltos/validadosComNota.length*100) : null;
 
     document.getElementById('kpi-enviados').textContent = enviados;
     document.getElementById('kpi-respondidos').textContent = respondidos;
@@ -1270,6 +1490,7 @@
     waveFill.setAttribute('y', 118 - fillHeight); waveFill.setAttribute('height', fillHeight);
     document.getElementById('gauge-pct').textContent = respostaPct + '%';
 
+    renderMetas();
     fillTable('tbody-por-analista', groupStats(records, 'analista'));
     fillTable('tbody-por-superint', groupStats(records, 'superintendencia'));
     fillTable('tbody-por-tipo', groupStats(records, 'tipo'));
@@ -1503,6 +1724,7 @@
     }
     renderPollTemplates();
     RECORDS = await loadAll();
+    METAS = await loadMetas();
     renderRegistrar(); renderLancar(); renderValidar(); renderPainel(); updateNavBadges();
   })();
 
