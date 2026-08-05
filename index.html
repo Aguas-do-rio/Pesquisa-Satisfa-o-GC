@@ -340,6 +340,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12.5" y="8" width="3" height="10"/><rect x="18" y="5" width="3" height="13"/></svg>
       <span class="lbl">Painel consolidado</span>
     </button>
+    <button data-view="painel-gestora">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+      <span class="lbl">Painel da Gestora</span>
+    </button>
   </nav>
 
   <!-- 1. REGISTRAR ATENDIMENTO -->
@@ -587,20 +591,12 @@
       <div class="line"></div>
     </div>
 
-    <div class="kpi-row" style="margin-bottom:0;">
-      <div class="kpi"><div class="label">Carteira total</div><div class="value" id="meta-carteira-total">0</div></div>
-      <div class="kpi"><div class="label">Meta consolidada (ajustada)</div><div class="value" id="meta-consolidada">0</div></div>
-      <div class="kpi leaf"><div class="label">Validados (com nota)</div><div class="value leaf" id="meta-validados">0</div></div>
-      <div class="kpi leaf"><div class="label">% atingido</div><div class="value leaf" id="meta-pct-atingido">0%</div></div>
-    </div>
-
     <div class="card">
-      <h2>Metas por executivo <span style="font-weight:500; color:var(--text-mut); font-size:12px;">(atualiza automaticamente a cada validação)</span></h2>
-      <p class="sub">Casos de "Não foi possível realizar a pesquisa" reduzem a meta do executivo, sem afetar a nota final dele.</p>
+      <h2>% de conclusão da meta <span style="font-weight:500; color:var(--text-mut); font-size:12px;">(atualiza automaticamente a cada validação)</span></h2>
       <div style="overflow-x:auto;">
         <table>
-          <thead><tr><th>Executivo</th><th>Carteira</th><th>Meta original</th><th>Não foi possível (validados)</th><th>Meta ajustada</th><th>Validados c/ nota</th><th>% atingido</th><th>Nota média</th></tr></thead>
-          <tbody id="tbody-metas"><tr class="empty-row"><td colspan="8">Carregando...</td></tr></tbody>
+          <thead><tr><th>Executivo</th><th>% atingido</th><th>Nota média</th></tr></thead>
+          <tbody id="tbody-metas"><tr class="empty-row"><td colspan="3">Carregando...</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -675,6 +671,48 @@
     </div>
   </section>
 
+  <!-- 5. PAINEL DA GESTORA (protegido por login) -->
+  <section id="view-painel-gestora" class="view">
+    <div class="card" id="gestora-login-card">
+      <h2>Painel da Gestora <span class="role-tag role-gestor">acesso restrito</span></h2>
+      <p class="sub">Entre com o e-mail e senha de gestora para ver o detalhamento completo das metas.</p>
+      <div class="field span3" style="max-width:320px;">
+        <label>E-mail</label>
+        <input type="email" id="gestora-login-email" placeholder="gestora@atualizacao-gc.local">
+      </div>
+      <div class="field span3" style="max-width:320px;">
+        <label>Senha</label>
+        <input type="password" id="gestora-login-senha" placeholder="Sua senha">
+      </div>
+      <button class="btn btn-primary" id="btn-gestora-login">Entrar</button>
+      <div class="msg" id="msg-gestora-login"></div>
+    </div>
+
+    <div id="gestora-conteudo" style="display:none;">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;">
+          <div>
+            <h2>Metas — visão completa</h2>
+            <p class="sub">Detalhamento completo por executivo. Casos de "Não foi possível realizar a pesquisa" reduzem a meta, sem afetar a nota final.</p>
+          </div>
+          <button class="btn btn-ghost btn-sm" id="btn-gestora-logout">Sair</button>
+        </div>
+        <div class="kpi-row" style="margin-bottom:16px;">
+          <div class="kpi"><div class="label">Carteira total</div><div class="value" id="meta-carteira-total">0</div></div>
+          <div class="kpi"><div class="label">Meta consolidada (ajustada)</div><div class="value" id="meta-consolidada">0</div></div>
+          <div class="kpi leaf"><div class="label">Validados (com nota)</div><div class="value leaf" id="meta-validados">0</div></div>
+          <div class="kpi leaf"><div class="label">% atingido</div><div class="value leaf" id="meta-pct-atingido">0%</div></div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>Executivo</th><th>Carteira</th><th>Meta original</th><th>Não foi possível (validados)</th><th>Meta ajustada</th><th>Validados c/ nota</th><th>% atingido</th><th>Nota média</th></tr></thead>
+            <tbody id="tbody-metas-completo"><tr class="empty-row"><td colspan="8">Carregando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <footer class="note">
     Envio e lançamento de respostas feitos pelo analista; validação da nota do executivo feita por um gestor de 1ª linha. Apenas a nota do executivo validada entra na apuração de PLR — as demais 3 perguntas são indicadores de serviço. Dados compartilhados entre todos os usuários da ferramenta.
   </footer>
@@ -706,10 +744,13 @@
   // ======= CONFIGURAÇÃO — Supabase =======
   const SUPABASE_URL = 'https://yidsjyfcuzytkejctqfp.supabase.co/rest/v1/registros';
   const SUPABASE_BASE_URL = 'https://yidsjyfcuzytkejctqfp.supabase.co/rest/v1';
+  const SUPABASE_AUTH_URL = 'https://yidsjyfcuzytkejctqfp.supabase.co/auth/v1';
   const SUPABASE_KEY = 'sb_publishable_dJWDHA-YGrM3jIXgFBuk1w_ZxZSaHBQ';
   // =========================================
   let RECORDS = [];
   let METAS = [];
+  let GESTORA_AUTENTICADA = false;
+  let GESTORA_TOKEN = null;
   let selectedId = null;
 
   const OPCOES_ABASTECIMENTO = ['Ótimo — contínuo e sem problemas','Bom — falhas eventuais e rápidas','Regular — falhas frequentes','Ruim — abastecimento instável','Péssimo — sem abastecimento'];
@@ -831,6 +872,71 @@
     }catch(e){ console.error('loadMetas error', e); return []; }
   }
 
+  // ---------- login da gestora (reaproveita o Supabase Auth já usado na Atualização Cadastral) ----------
+  function salvarSessaoGestora(token){
+    try{ localStorage.setItem('pesquisa_gestora_token', token); }catch(e){}
+  }
+  function carregarSessaoGestora(){
+    try{ return localStorage.getItem('pesquisa_gestora_token'); }catch(e){ return null; }
+  }
+  function limparSessaoGestora(){
+    try{ localStorage.removeItem('pesquisa_gestora_token'); }catch(e){}
+  }
+
+  async function verificarPerfilGestora(token){
+    const resUser = await fetch(SUPABASE_AUTH_URL + '/user', {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token }
+    });
+    if(!resUser.ok) throw new Error('Sessão inválida.');
+    const user = await resUser.json();
+    const resPerfil = await fetch(SUPABASE_BASE_URL + '/perfis?email=eq.' + encodeURIComponent(user.email) + '&select=*', {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token }
+    });
+    if(!resPerfil.ok) throw new Error('Não foi possível verificar o perfil.');
+    const perfis = await resPerfil.json();
+    if(!perfis.length || perfis[0].role !== 'gestora') throw new Error('Este login não tem permissão de gestora.');
+    return true;
+  }
+
+  function mostrarPainelGestora(){
+    GESTORA_AUTENTICADA = true;
+    document.getElementById('gestora-login-card').style.display = 'none';
+    document.getElementById('gestora-conteudo').style.display = 'block';
+    renderMetasCompleto();
+  }
+
+  document.getElementById('btn-gestora-login').addEventListener('click', async ()=>{
+    const email = document.getElementById('gestora-login-email').value.trim();
+    const senha = document.getElementById('gestora-login-senha').value;
+    const msg = document.getElementById('msg-gestora-login');
+    if(!email || !senha){ msg.style.color='var(--rose)'; msg.textContent='Preencha e-mail e senha.'; return; }
+    msg.style.color='var(--text-mut)'; msg.textContent='Entrando...';
+    try{
+      const res = await fetch(SUPABASE_AUTH_URL + '/token?grant_type=password', {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: senha })
+      });
+      const data = await res.json();
+      if(!res.ok || !data.access_token) throw new Error(data.error_description || data.msg || 'E-mail ou senha inválidos.');
+      await verificarPerfilGestora(data.access_token);
+      GESTORA_TOKEN = data.access_token;
+      salvarSessaoGestora(data.access_token);
+      mostrarPainelGestora();
+    }catch(err){
+      msg.style.color='var(--rose)'; msg.textContent = err.message || 'Erro ao entrar.';
+    }
+  });
+
+  document.getElementById('btn-gestora-logout').addEventListener('click', ()=>{
+    limparSessaoGestora();
+    GESTORA_AUTENTICADA = false; GESTORA_TOKEN = null;
+    document.getElementById('gestora-login-card').style.display = 'block';
+    document.getElementById('gestora-conteudo').style.display = 'none';
+    document.getElementById('gestora-login-email').value = '';
+    document.getElementById('gestora-login-senha').value = '';
+  });
+
   async function saveRecord(rec){
     if(!CONFIGURED){
       alert('A ferramenta ainda não está configurada com o Supabase. Avise quem administra a planilha/banco.');
@@ -870,6 +976,7 @@
       if(btn.dataset.view === 'painel') renderPainel();
       if(btn.dataset.view === 'lancar') renderLancar();
       if(btn.dataset.view === 'validar') renderValidar();
+      if(btn.dataset.view === 'painel-gestora' && GESTORA_AUTENTICADA) renderMetasCompleto();
     });
   });
 
@@ -1393,15 +1500,8 @@
     })).sort((a,b)=>b.enviados-a.enviados);
   }
 
-  function renderMetas(){
-    const tbody = document.getElementById('tbody-metas');
-    if(!tbody) return;
-    if(METAS.length === 0){
-      tbody.innerHTML = '<tr class="empty-row"><td colspan="8">Nenhuma meta cadastrada (tabela metas_executivos vazia).</td></tr>';
-      return;
-    }
-    let somaCarteira = 0, somaMetaAjustada = 0, somaValidadosComNota = 0;
-    const linhas = METAS.map(m=>{
+  function calcularMetas(){
+    return METAS.map(m=>{
       const doAnalista = RECORDS.filter(r=>r.analista===m.analista);
       const impossibilidadeValidada = doAnalista.filter(r=>r.status==='validado' && r.tipo===TIPO_IMPOSSIBILIDADE).length;
       const validadosComNota = doAnalista.filter(r=>r.status==='validado' && r.nota_atendimento!=null).length;
@@ -1409,13 +1509,43 @@
       const pctAtingido = metaAjustada ? (validadosComNota/metaAjustada*100) : 0;
       const somaNotaAnalista = doAnalista.reduce((s,r)=> (r.status==='validado' && r.nota_atendimento!=null) ? s + r.nota_atendimento : s, 0);
       const notaMediaAnalista = validadosComNota ? (somaNotaAnalista/validadosComNota).toFixed(1) : '–';
+      return { m, impossibilidadeValidada, validadosComNota, metaAjustada, pctAtingido, notaMediaAnalista };
+    }).sort((a,b)=> b.pctAtingido - a.pctAtingido);
+  }
 
+  function renderMetas(){
+    const tbody = document.getElementById('tbody-metas');
+    if(!tbody) return;
+    if(METAS.length === 0){
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="3">Nenhuma meta cadastrada.</td></tr>';
+    } else {
+      const linhas = calcularMetas();
+      tbody.innerHTML = linhas.map(({m,pctAtingido,notaMediaAnalista})=>{
+        const cor = pctAtingido >= 100 ? 'var(--leaf)' : pctAtingido >= 70 ? 'var(--amber)' : 'var(--rose)';
+        return `<tr>
+          <td>${escapeHtml(m.analista)}</td>
+          <td style="color:${cor}; font-weight:700;">${pctAtingido.toFixed(0)}%</td>
+          <td>${notaMediaAnalista === '–' ? '–' : notaMediaAnalista + ' ★'}</td>
+        </tr>`;
+      }).join('');
+    }
+    if(GESTORA_AUTENTICADA) renderMetasCompleto();
+  }
+
+  function renderMetasCompleto(){
+    const tbody = document.getElementById('tbody-metas-completo');
+    if(!tbody) return;
+    if(METAS.length === 0){
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="8">Nenhuma meta cadastrada (tabela metas_executivos vazia).</td></tr>';
+      return;
+    }
+    let somaCarteira = 0, somaMetaAjustada = 0, somaValidadosComNota = 0;
+    const linhas = calcularMetas();
+    linhas.forEach(({m,metaAjustada,validadosComNota})=>{
       somaCarteira += (m.carteira_total||0);
       somaMetaAjustada += metaAjustada;
       somaValidadosComNota += validadosComNota;
-
-      return { m, impossibilidadeValidada, validadosComNota, metaAjustada, pctAtingido, notaMediaAnalista };
-    }).sort((a,b)=> b.pctAtingido - a.pctAtingido);
+    });
 
     tbody.innerHTML = linhas.map(({m,impossibilidadeValidada,validadosComNota,metaAjustada,pctAtingido,notaMediaAnalista})=>{
       const cor = pctAtingido >= 100 ? 'var(--leaf)' : pctAtingido >= 70 ? 'var(--amber)' : 'var(--rose)';
@@ -1726,6 +1856,15 @@
     RECORDS = await loadAll();
     METAS = await loadMetas();
     renderRegistrar(); renderLancar(); renderValidar(); renderPainel(); updateNavBadges();
+
+    const tokenSalvo = carregarSessaoGestora();
+    if(tokenSalvo){
+      try{
+        await verificarPerfilGestora(tokenSalvo);
+        GESTORA_TOKEN = tokenSalvo;
+        mostrarPainelGestora();
+      }catch(e){ limparSessaoGestora(); }
+    }
   })();
 
 })();
