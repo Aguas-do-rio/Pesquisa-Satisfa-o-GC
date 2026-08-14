@@ -713,9 +713,16 @@
 
       <div class="card">
         <h2>Meta semanal — quem bateu (atendimentos registrados)</h2>
-        <p class="sub">Meta individual: 15 atendimentos registrados por semana (segunda a domingo). Mesma régua usada na Atualização Cadastral.</p>
+        <p class="sub">Meta individual: 15/semana (segunda a domingo). Meta coletiva: 270 (18 executivos — Alessandro e Fellipe não entram nesse cálculo). Mínimo aceitável: 80% (216). Mesma régua usada na Atualização Cadastral.</p>
+        <div class="kpi-row" style="grid-template-columns:repeat(4,1fr); margin-bottom:14px;">
+          <div class="kpi"><div class="label">Meta coletiva (100%)</div><div class="value" id="ms-time-meta">270</div></div>
+          <div class="kpi"><div class="label">Realizado pelo time</div><div class="value" id="ms-time-realizado">0</div></div>
+          <div class="kpi leaf"><div class="label">% atingido</div><div class="value leaf" id="ms-time-pct">0%</div></div>
+          <div class="kpi amber"><div class="label">Falta para 100%</div><div class="value amber" id="ms-time-falta">270</div></div>
+        </div>
+        <div style="margin-bottom:14px;" id="ms-time-badge-wrap"></div>
         <div class="kpi-row" style="grid-template-columns:repeat(3,1fr); margin-bottom:14px;">
-          <div class="kpi"><div class="label">Bateram a meta</div><div class="value leaf" id="ms-qtd-bateram">0</div></div>
+          <div class="kpi"><div class="label">Bateram a meta individual</div><div class="value leaf" id="ms-qtd-bateram">0</div></div>
           <div class="kpi"><div class="label">Não bateram</div><div class="value amber" id="ms-qtd-nao-bateram">0</div></div>
           <div class="kpi"><div class="label">% do time que bateu</div><div class="value" id="ms-pct-time">0%</div></div>
         </div>
@@ -1606,6 +1613,10 @@
   }
 
   const META_SEMANAL_PESQUISA = 15;
+  const META_SEMANAL_EXCLUIDOS = ['Alessandro Silveira', 'Fellipe Braga'];
+  const META_SEMANAL_TAMANHO_TIME = 18; // reservando sempre 1 executivo de férias
+  const META_SEMANAL_TIME_100 = META_SEMANAL_TAMANHO_TIME * META_SEMANAL_PESQUISA; // 270
+  const META_SEMANAL_TIME_80 = Math.ceil(META_SEMANAL_TIME_100 * 0.8); // 216
 
   function inicioDaSemanaAtualPesquisa(){
     const agora = new Date();
@@ -1626,10 +1637,12 @@
     const porAnalista = {};
     registradosNaSemana.forEach(r=>{
       const a = r.analista || '—';
+      if(META_SEMANAL_EXCLUIDOS.includes(a)) return;
       porAnalista[a] = (porAnalista[a]||0) + 1;
     });
 
-    const nomesAnalistas = METAS.length ? METAS.map(m=>m.analista) : [...new Set(RECORDS.map(r=>r.analista).filter(Boolean))];
+    const nomesAnalistas = (METAS.length ? METAS.map(m=>m.analista) : [...new Set(RECORDS.map(r=>r.analista).filter(Boolean))])
+      .filter(a => !META_SEMANAL_EXCLUIDOS.includes(a));
     const linhas = nomesAnalistas.map(analista=>{
       const registrados = porAnalista[analista] || 0;
       const pct = Math.min(999, Math.round(registrados/META_SEMANAL_PESQUISA*100));
@@ -1648,6 +1661,20 @@
     document.getElementById('ms-qtd-bateram').textContent = qtdBateram;
     document.getElementById('ms-qtd-nao-bateram').textContent = qtdNaoBateram;
     document.getElementById('ms-pct-time').textContent = linhas.length ? Math.round(qtdBateram/linhas.length*100) + '%' : '0%';
+
+    // ---- consolidado do time (270 = meta 100%, 216 = mínimo 80%) ----
+    const realizadoTime = linhas.reduce((s,l)=>s+l.registrados, 0);
+    const pctTime = Math.round(realizadoTime/META_SEMANAL_TIME_100*100);
+    const faltaTime = Math.max(0, META_SEMANAL_TIME_100 - realizadoTime);
+    document.getElementById('ms-time-meta').textContent = META_SEMANAL_TIME_100;
+    document.getElementById('ms-time-realizado').textContent = realizadoTime;
+    document.getElementById('ms-time-pct').textContent = pctTime + '%';
+    document.getElementById('ms-time-falta').textContent = faltaTime;
+
+    const atingiu80 = realizadoTime >= META_SEMANAL_TIME_80;
+    document.getElementById('ms-time-badge-wrap').innerHTML = atingiu80
+      ? `<span class="badge badge-validado">✅ Time atingiu os 80% mínimos (${META_SEMANAL_TIME_80})</span>`
+      : `<span class="badge badge-pendente">⚠️ Time ainda não atingiu os 80% mínimos (${META_SEMANAL_TIME_80}) — faltam ${Math.max(0, META_SEMANAL_TIME_80 - realizadoTime)}</span>`;
   }
 
 
