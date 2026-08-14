@@ -712,6 +712,22 @@
       </div>
 
       <div class="card">
+        <h2>Meta semanal — quem bateu (atendimentos registrados)</h2>
+        <p class="sub">Meta individual: 15 atendimentos registrados por semana (segunda a domingo). Mesma régua usada na Atualização Cadastral.</p>
+        <div class="kpi-row" style="grid-template-columns:repeat(3,1fr); margin-bottom:14px;">
+          <div class="kpi"><div class="label">Bateram a meta</div><div class="value leaf" id="ms-qtd-bateram">0</div></div>
+          <div class="kpi"><div class="label">Não bateram</div><div class="value amber" id="ms-qtd-nao-bateram">0</div></div>
+          <div class="kpi"><div class="label">% do time que bateu</div><div class="value" id="ms-pct-time">0%</div></div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>Analista</th><th>Registrados (semana)</th><th>Meta</th><th>% atingido</th><th>Situação</th></tr></thead>
+            <tbody id="tbody-meta-semanal-pesquisa"><tr class="empty-row"><td colspan="5">Carregando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
         <h2>Exportações</h2>
         <p class="sub">Relatórios para acompanhamento fora da ferramenta. Todos geram um CSV na hora, com os dados mais atuais.</p>
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
@@ -1585,6 +1601,53 @@
     document.getElementById('meta-consolidada').textContent = somaMetaAjustada.toLocaleString('pt-BR');
     document.getElementById('meta-validados').textContent = somaValidadosComNota.toLocaleString('pt-BR');
     document.getElementById('meta-pct-atingido').textContent = somaMetaAjustada ? (somaValidadosComNota/somaMetaAjustada*100).toFixed(1).replace('.',',') + '%' : '0%';
+
+    renderMetaSemanalPesquisa();
+  }
+
+  const META_SEMANAL_PESQUISA = 15;
+
+  function inicioDaSemanaAtualPesquisa(){
+    const agora = new Date();
+    const dia = agora.getDay(); // 0=domingo
+    const diffParaSegunda = (dia === 0) ? -6 : (1 - dia);
+    const seg = new Date(agora);
+    seg.setDate(agora.getDate() + diffParaSegunda);
+    seg.setHours(0,0,0,0);
+    return seg;
+  }
+
+  function renderMetaSemanalPesquisa(){
+    const tbody = document.getElementById('tbody-meta-semanal-pesquisa');
+    if(!tbody) return;
+    const inicioSemana = inicioDaSemanaAtualPesquisa();
+    const registradosNaSemana = RECORDS.filter(r => r.data_envio && new Date(r.data_envio) >= inicioSemana);
+
+    const porAnalista = {};
+    registradosNaSemana.forEach(r=>{
+      const a = r.analista || '—';
+      porAnalista[a] = (porAnalista[a]||0) + 1;
+    });
+
+    const nomesAnalistas = METAS.length ? METAS.map(m=>m.analista) : [...new Set(RECORDS.map(r=>r.analista).filter(Boolean))];
+    const linhas = nomesAnalistas.map(analista=>{
+      const registrados = porAnalista[analista] || 0;
+      const pct = Math.min(999, Math.round(registrados/META_SEMANAL_PESQUISA*100));
+      const bateu = registrados >= META_SEMANAL_PESQUISA;
+      return { analista, registrados, pct, bateu };
+    }).sort((a,b)=> b.registrados - a.registrados);
+
+    tbody.innerHTML = linhas.length===0 ? '<tr class="empty-row"><td colspan="5">Sem dados</td></tr>' :
+      linhas.map(l=>`<tr>
+        <td>${escapeHtml(l.analista)}</td><td>${l.registrados}</td><td>${META_SEMANAL_PESQUISA}</td><td>${l.pct}%</td>
+        <td>${l.bateu ? '<span class="badge badge-validado">✅ Bateu a meta</span>' : '<span class="badge badge-pendente">Não bateu</span>'}</td>
+      </tr>`).join('');
+
+    const qtdBateram = linhas.filter(l=>l.bateu).length;
+    const qtdNaoBateram = linhas.length - qtdBateram;
+    document.getElementById('ms-qtd-bateram').textContent = qtdBateram;
+    document.getElementById('ms-qtd-nao-bateram').textContent = qtdNaoBateram;
+    document.getElementById('ms-pct-time').textContent = linhas.length ? Math.round(qtdBateram/linhas.length*100) + '%' : '0%';
   }
 
 
