@@ -885,9 +885,12 @@
   function toClientRecord(row){
     return Object.assign({}, row, {
       evidencia_imagem: row.evidencia_imagem_url || null,
+      _imagemCarregada: Object.prototype.hasOwnProperty.call(row, 'evidencia_imagem_url'),
       nota_atendimento: (row.nota_atendimento !== null && row.nota_atendimento !== undefined) ? Number(row.nota_atendimento) : null
     });
   }
+
+  const COLUNAS_LEVES = 'id,matricula,telefone,analista,tipo,superintendencia,segmento,numero_os_impossibilidade,data_envio,status,data_resposta,nota_atendimento,evidencia_tipo,evidencia_imagem_nome,validado_por,data_validacao,validacao_obs,qualidade_abastecimento,prazo_resolucao,motivo_contato';
 
   async function loadAll(){
     if(!CONFIGURED){
@@ -895,13 +898,33 @@
       return [];
     }
     try{
-      const res = await fetch(SUPABASE_URL + '?select=*', {
+      // Não busca a imagem de evidência aqui (evidencia_imagem_url) — ela é pesada
+      // (base64) e, com muitos registros, o pedido "tudo de uma vez" passou a
+      // estourar o limite do banco (erro 500). A imagem é buscada à parte, só
+      // para os registros que realmente precisam mostrá-la na tela.
+      const res = await fetch(SUPABASE_URL + '?select=' + COLUNAS_LEVES, {
         headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
       });
       if(!res.ok) throw new Error('HTTP ' + res.status);
       const rows = await res.json();
       return (rows || []).map(toClientRecord);
     }catch(e){ console.error('loadAll error', e); return []; }
+  }
+
+  async function carregarImagensEvidencia(ids){
+    if(!CONFIGURED || !ids || ids.length===0) return;
+    try{
+      const filtroIds = ids.map(id=>`"${id}"`).join(',');
+      const res = await fetch(SUPABASE_URL + '?select=id,evidencia_imagem_url&id=in.(' + filtroIds + ')', {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+      });
+      if(!res.ok) throw new Error('HTTP ' + res.status);
+      const rows = await res.json();
+      rows.forEach(row=>{
+        const rec = RECORDS.find(r=>r.id===row.id);
+        if(rec){ rec.evidencia_imagem = row.evidencia_imagem_url || null; rec._imagemCarregada = true; }
+      });
+    }catch(e){ console.error('carregarImagensEvidencia error', e); }
   }
 
   async function loadMetas(){
@@ -1437,6 +1460,12 @@
     const busca = (document.getElementById('busca-validar').value || '').toLowerCase();
     const aguardando = RECORDS.filter(r=>r.status==='aguardando_validacao' && (!busca || r.matricula.toLowerCase().includes(busca)))
       .sort((a,b)=> (b.data_resposta||'').localeCompare(a.data_resposta||''));
+
+    const idsSemImagem = aguardando.filter(r=>!r._imagemCarregada).map(r=>r.id);
+    if(idsSemImagem.length){
+      carregarImagensEvidencia(idsSemImagem).then(()=> renderValidar());
+    }
+
     const tb = document.getElementById('tbody-validar');
     tb.innerHTML = aguardando.length===0 ? `<tr class="empty-row"><td colspan="6">Nada aguardando validação no momento.</td></tr>` :
       aguardando.map(r=>`
@@ -1770,7 +1799,7 @@
   });
 
   // ---------- export ----------
-  function buildCSVString(){
+  function buildCSVString(idsComImagem){
     const records = filteredRecords();
     const header = ['Matricula','Telefone','Analista','Tipo','Superintendencia','Segmento','Registrado em','Status',
       'Nota executivo','Evidencia','Imagem anexada','Validado por','Data validacao','Observacao validacao',
@@ -1778,15 +1807,27 @@
     const rows = records.map(r=>[
       r.matricula, r.telefone||'', r.analista, r.tipo||'', r.superintendencia, r.segmento||'',
       fmtDateBR(r.data_envio), r.status, r.nota_atendimento||'', EVID_LABEL[r.evidencia_tipo]||'',
-      r.evidencia_imagem ? 'Sim' : 'Não',
+      (idsComImagem ? idsComImagem.has(r.id) : !!r.evidencia_imagem) ? 'Sim' : 'Não',
       r.validado_por||'', fmtDateOnlyBR(r.data_validacao), r.validacao_obs||'',
       r.qualidade_abastecimento||'', r.prazo_resolucao||'', r.motivo_contato||''
     ]);
     return [header, ...rows].map(row => row.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(';')).join('\n');
   }
 
-  document.getElementById('btn-export').addEventListener('click', ()=>{
-    const csv = buildCSVString();
+  async function buscarIdsComImagem(){
+    try{
+      const res = await fetch(SUPABASE_URL + '?select=id&evidencia_imagem_url=not.is.null', {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+      });
+      if(!res.ok) throw new Error('HTTP ' + res.status);
+      const rows = await res.json();
+      return new Set(rows.map(r=>r.id));
+    }catch(e){ console.error('buscarIdsComImagem error', e); return null; }
+  }
+
+  document.getElementById('btn-export').addEventListener('click', async ()=>{
+    const idsComImagem = await buscarIdsComImagem();
+    const csv = buildCSVString(idsComImagem);
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url; a.download = 'pesquisa_satisfacao_atendimento.csv';
@@ -1853,7 +1894,8 @@
 
   document.getElementById('btn-copy-csv').addEventListener('click', async ()=>{
     const msg = document.getElementById('msg-import');
-    const csv = buildCSVString();
+    const idsComImagem = await buscarIdsComImagem();
+    const csv = buildCSVString(idsComImagem);
     const ok = await copyToClipboard(csv);
     if(ok){
       msg.style.color = 'var(--leaf)'; msg.textContent = 'CSV copiado! Cole (Ctrl+V) num Bloco de Notas ou numa planilha.';
