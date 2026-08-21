@@ -503,6 +503,11 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
         <input type="text" id="busca-validar" placeholder="Buscar por matrícula...">
       </div>
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
+        <input type="text" id="in-gestor-lote" placeholder="Seu nome" style="max-width:220px; padding:9px 12px; border:1px solid var(--border); border-radius:8px; font-size:13px;">
+        <button class="btn btn-approve btn-sm" id="btn-validar-todos">Validar todos os pendentes</button>
+        <span id="msg-validar-lote" style="font-size:13px; font-weight:700;"></span>
+      </div>
       <div style="overflow-x:auto;">
         <table>
           <thead><tr><th>Matrícula</th><th>Analista</th><th>Nota executivo</th><th>Evidência</th><th>Gestor / Observação</th><th></th></tr></thead>
@@ -1516,6 +1521,37 @@
         if(ok){ renderValidar(); renderRegistrar(); renderPainel(); updateNavBadges(); } else { btn.disabled=false; alert('Erro ao salvar.'); }
       });
     });
+
+    document.getElementById('btn-validar-todos').onclick = async ()=>{
+      const gestor = document.getElementById('in-gestor-lote').value.trim();
+      const msg = document.getElementById('msg-validar-lote');
+      if(!gestor){ alert('Informe o seu nome antes de validar em lote.'); return; }
+      const pendentes = RECORDS.filter(r=>r.status==='aguardando_validacao');
+      if(pendentes.length===0){ msg.style.color='var(--text-mut)'; msg.textContent='Não há nada pendente de validação.'; return; }
+      if(!confirm(`Validar todos os ${pendentes.length} atendimentos aguardando validação, como "${gestor}"? Essa ação não pode ser desfeita em lote.`)) return;
+
+      const btn = document.getElementById('btn-validar-todos');
+      btn.disabled = true;
+      msg.style.color='var(--text-mut)'; msg.textContent = `Validando ${pendentes.length} registros...`;
+
+      const agora = todayISO();
+      const idsFiltro = pendentes.map(r=>`"${r.id}"`).join(',');
+      try{
+        const res = await fetch(SUPABASE_URL + '?id=in.(' + idsFiltro + ')', {
+          method: 'PATCH',
+          headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'validado', validado_por: gestor, data_validacao: agora })
+        });
+        if(!res.ok) throw new Error('HTTP ' + res.status);
+        pendentes.forEach(r=>{ r.status='validado'; r.validado_por=gestor; r.data_validacao=agora; });
+        msg.style.color='var(--leaf)'; msg.textContent = `${pendentes.length} registros validados.`;
+        renderValidar(); renderRegistrar(); renderPainel(); updateNavBadges();
+      }catch(e){
+        console.error('validar em lote error', e);
+        msg.style.color='var(--rose)'; msg.textContent = 'Erro ao validar em lote. Tente novamente.';
+      }
+      btn.disabled = false;
+    };
 
     const historico = RECORDS.filter(r=>r.status==='validado' || r.status==='rejeitado')
       .sort((a,b)=> (b.data_validacao||'').localeCompare(a.data_validacao||'')).slice(0,15);
