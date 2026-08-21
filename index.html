@@ -1010,8 +1010,14 @@
     }
     try{
       const payload = Object.assign({}, rec);
-      payload.evidencia_imagem_url = payload.evidencia_imagem || null;
+      if(rec._imagemCarregada){
+        payload.evidencia_imagem_url = payload.evidencia_imagem || null;
+      } else {
+        // imagem ainda não foi buscada nesta sessão — não mexe no valor já salvo no banco
+        delete payload.evidencia_imagem_url;
+      }
       delete payload.evidencia_imagem;
+      delete payload._imagemCarregada;
 
       const res = await fetch(SUPABASE_URL + '?on_conflict=id', {
         method: 'POST',
@@ -1326,6 +1332,7 @@
       rec.evidencia_tipo = evidRadio.value;
       rec.evidencia_imagem = evidenciaImagemData;
       rec.evidencia_imagem_nome = evidenciaImagemNome;
+      rec._imagemCarregada = true;
       rec.qualidade_abastecimento = abastecimento;
       rec.prazo_resolucao = prazo;
       rec.motivo_contato = motivo==='Outro' ? ('Outro: ' + motivoOutro) : motivo;
@@ -1440,6 +1447,7 @@
       rec.evidencia_tipo = null;
       rec.evidencia_imagem = evidenciaImagemData;
       rec.evidencia_imagem_nome = evidenciaImagemNome;
+      rec._imagemCarregada = true;
       rec.qualidade_abastecimento = null;
       rec.prazo_resolucao = null;
       rec.motivo_contato = null;
