@@ -907,11 +907,26 @@
       // (base64) e, com muitos registros, o pedido "tudo de uma vez" passou a
       // estourar o limite do banco (erro 500). A imagem é buscada à parte, só
       // para os registros que realmente precisam mostrá-la na tela.
-      const res = await fetch(SUPABASE_URL + '?select=' + COLUNAS_LEVES, {
-        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
-      });
-      if(!res.ok) throw new Error('HTTP ' + res.status);
-      const rows = await res.json();
+      //
+      // A busca é paginada (1000 em 1000) porque o Supabase, por padrão, corta a
+      // resposta em 1000 linhas — sem isso, os registros mais recentes (acima da
+      // linha 1000) somem silenciosamente da ferramenta.
+      let rows = [];
+      let offset = 0;
+      const pageSize = 1000;
+      while(true){
+        const res = await fetch(SUPABASE_URL + '?select=' + COLUNAS_LEVES, {
+          headers: {
+            'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY,
+            'Range': offset + '-' + (offset + pageSize - 1)
+          }
+        });
+        if(!res.ok) throw new Error('HTTP ' + res.status);
+        const pagina = await res.json();
+        rows = rows.concat(pagina);
+        if(pagina.length < pageSize) break;
+        offset += pageSize;
+      }
       return (rows || []).map(toClientRecord);
     }catch(e){ console.error('loadAll error', e); return []; }
   }
