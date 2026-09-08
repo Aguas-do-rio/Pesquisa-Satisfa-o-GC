@@ -340,6 +340,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12.5" y="8" width="3" height="10"/><rect x="18" y="5" width="3" height="13"/></svg>
       <span class="lbl">Painel consolidado</span>
     </button>
+    <button data-view="meta-semanal">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      <span class="lbl">Meta semanal</span>
+    </button>
     <button data-view="painel-gestora">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
       <span class="lbl">Painel da Gestora</span>
@@ -676,6 +680,32 @@
     </div>
   </section>
 
+  <!-- 4.5. META SEMANAL (público, sem login) -->
+  <section id="view-meta-semanal" class="view">
+    <div class="card">
+      <h2>Meta semanal — quem bateu (atendimentos registrados)</h2>
+      <p class="sub">Meta individual: 15/semana (segunda a domingo). Meta coletiva: 270 (18 executivos — Alessandro e Fellipe não entram nesse cálculo). Mínimo aceitável: 80% (216). Mesma régua usada na Atualização Cadastral.</p>
+      <div class="kpi-row" style="grid-template-columns:repeat(4,1fr); margin-bottom:14px;">
+        <div class="kpi"><div class="label">Meta coletiva (100%)</div><div class="value" id="ms-time-meta">270</div></div>
+        <div class="kpi"><div class="label">Realizado pelo time</div><div class="value" id="ms-time-realizado">0</div></div>
+        <div class="kpi leaf"><div class="label">% atingido</div><div class="value leaf" id="ms-time-pct">0%</div></div>
+        <div class="kpi amber"><div class="label">Falta para 100%</div><div class="value amber" id="ms-time-falta">270</div></div>
+      </div>
+      <div style="margin-bottom:14px;" id="ms-time-badge-wrap"></div>
+      <div class="kpi-row" style="grid-template-columns:repeat(3,1fr); margin-bottom:14px;">
+        <div class="kpi"><div class="label">Bateram a meta individual</div><div class="value leaf" id="ms-qtd-bateram">0</div></div>
+        <div class="kpi"><div class="label">Não bateram</div><div class="value amber" id="ms-qtd-nao-bateram">0</div></div>
+        <div class="kpi"><div class="label">% do time que bateu</div><div class="value" id="ms-pct-time">0%</div></div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead><tr><th>Analista</th><th>Registrados (semana)</th><th>Meta</th><th>% atingido</th><th>Situação</th></tr></thead>
+          <tbody id="tbody-meta-semanal-pesquisa"><tr class="empty-row"><td colspan="5">Carregando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
   <!-- 5. PAINEL DA GESTORA (protegido por login) -->
   <section id="view-painel-gestora" class="view">
     <div class="card" id="gestora-login-card">
@@ -712,29 +742,6 @@
           <table>
             <thead><tr><th>Executivo</th><th>Carteira</th><th>Meta original</th><th>Não foi possível (validados)</th><th>Meta ajustada</th><th>Validados c/ nota</th><th>% atingido</th><th>Nota média</th></tr></thead>
             <tbody id="tbody-metas-completo"><tr class="empty-row"><td colspan="8">Carregando...</td></tr></tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>Meta semanal — quem bateu (atendimentos registrados)</h2>
-        <p class="sub">Meta individual: 15/semana (segunda a domingo). Meta coletiva: 270 (18 executivos — Alessandro e Fellipe não entram nesse cálculo). Mínimo aceitável: 80% (216). Mesma régua usada na Atualização Cadastral.</p>
-        <div class="kpi-row" style="grid-template-columns:repeat(4,1fr); margin-bottom:14px;">
-          <div class="kpi"><div class="label">Meta coletiva (100%)</div><div class="value" id="ms-time-meta">270</div></div>
-          <div class="kpi"><div class="label">Realizado pelo time</div><div class="value" id="ms-time-realizado">0</div></div>
-          <div class="kpi leaf"><div class="label">% atingido</div><div class="value leaf" id="ms-time-pct">0%</div></div>
-          <div class="kpi amber"><div class="label">Falta para 100%</div><div class="value amber" id="ms-time-falta">270</div></div>
-        </div>
-        <div style="margin-bottom:14px;" id="ms-time-badge-wrap"></div>
-        <div class="kpi-row" style="grid-template-columns:repeat(3,1fr); margin-bottom:14px;">
-          <div class="kpi"><div class="label">Bateram a meta individual</div><div class="value leaf" id="ms-qtd-bateram">0</div></div>
-          <div class="kpi"><div class="label">Não bateram</div><div class="value amber" id="ms-qtd-nao-bateram">0</div></div>
-          <div class="kpi"><div class="label">% do time que bateu</div><div class="value" id="ms-pct-time">0%</div></div>
-        </div>
-        <div style="overflow-x:auto;">
-          <table>
-            <thead><tr><th>Analista</th><th>Registrados (semana)</th><th>Meta</th><th>% atingido</th><th>Situação</th></tr></thead>
-            <tbody id="tbody-meta-semanal-pesquisa"><tr class="empty-row"><td colspan="5">Carregando...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -1068,6 +1075,7 @@
       if(btn.dataset.view === 'painel') renderPainel();
       if(btn.dataset.view === 'lancar') renderLancar();
       if(btn.dataset.view === 'validar') renderValidar();
+      if(btn.dataset.view === 'meta-semanal') renderMetaSemanalPesquisa();
       if(btn.dataset.view === 'painel-gestora' && GESTORA_AUTENTICADA) renderMetasCompleto();
     });
   });
