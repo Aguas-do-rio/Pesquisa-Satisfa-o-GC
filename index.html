@@ -418,13 +418,17 @@
           <label>Número da OS que justifica a impossibilidade</label>
           <input type="text" id="in-os-impossibilidade" placeholder="Ex: 123456">
         </div>
-        <div class="field">
-          <label>Superintendência</label>
-          <select id="in-superintendencia">
-            <option value="">Selecione</option>
-            <option>BAIXADA 01</option><option>BAIXADA 02</option><option>RIO NORTE</option>
-            <option>LESTE</option><option>RIO CENTRO SUL</option><option>INTERIOR</option><option>COMUNIDADES</option>
-          </select>
+        <div class="field span2">
+          <label>Superintendência <span style="font-weight:500; color:var(--text-faint);">(marque mais de uma se as matrículas forem de superintendências diferentes)</span></label>
+          <div id="in-superintendencia-checks" style="display:flex; flex-wrap:wrap; gap:10px; padding:9px 0;">
+            <label style="display:flex; align-items:center; gap:5px; font-size:13px; font-weight:500;"><input type="checkbox" value="BAIXADA 01"> BAIXADA 01</label>
+            <label style="display:flex; align-items:center; gap:5px; font-size:13px; font-weight:500;"><input type="checkbox" value="BAIXADA 02"> BAIXADA 02</label>
+            <label style="display:flex; align-items:center; gap:5px; font-size:13px; font-weight:500;"><input type="checkbox" value="RIO NORTE"> RIO NORTE</label>
+            <label style="display:flex; align-items:center; gap:5px; font-size:13px; font-weight:500;"><input type="checkbox" value="LESTE"> LESTE</label>
+            <label style="display:flex; align-items:center; gap:5px; font-size:13px; font-weight:500;"><input type="checkbox" value="RIO CENTRO SUL"> RIO CENTRO SUL</label>
+            <label style="display:flex; align-items:center; gap:5px; font-size:13px; font-weight:500;"><input type="checkbox" value="INTERIOR"> INTERIOR</label>
+            <label style="display:flex; align-items:center; gap:5px; font-size:13px; font-weight:500;"><input type="checkbox" value="COMUNIDADES"> COMUNIDADES</label>
+          </div>
         </div>
         <div class="field">
           <label>Segmento</label>
@@ -1142,7 +1146,7 @@
     let tipo = document.getElementById('in-tipo').value.trim();
     const tipoOutros = document.getElementById('in-tipo-outros').value.trim();
     const numeroOsImpossibilidade = document.getElementById('in-os-impossibilidade').value.trim();
-    const superintendencia = document.getElementById('in-superintendencia').value;
+    const superintendencia = [...document.querySelectorAll('#in-superintendencia-checks input:checked')].map(el=>el.value).join(', ');
     const segmento = document.getElementById('in-segmento').value;
     const msg = document.getElementById('msg-envio');
 
@@ -1180,6 +1184,7 @@
       msg.style.color = 'var(--leaf)'; msg.textContent = 'Atendimento registrado.';
       document.getElementById('in-matricula').value=''; document.getElementById('in-telefone').value='';
       document.getElementById('in-matriculas-adicionais').value='';
+      document.querySelectorAll('#in-superintendencia-checks input:checked').forEach(el=>el.checked=false);
       document.getElementById('in-tipo').value=''; document.getElementById('in-tipo-outros').value='';
       document.getElementById('in-tipo-outros-wrap').style.display='none';
       document.getElementById('in-os-impossibilidade').value='';
@@ -1663,7 +1668,7 @@
     const tipo = document.getElementById('f-tipo').value;
     const seg = document.getElementById('f-segmento').value;
     return RECORDS.filter(r=>
-      (!mes || monthOf(r.data_envio)===mes) && (!sup || r.superintendencia===sup) &&
+      (!mes || monthOf(r.data_envio)===mes) && (!sup || (r.superintendencia||'').split(',').map(s=>s.trim()).includes(sup)) &&
       (!an || r.analista===an) && (!tipo || r.tipo===tipo) && (!seg || r.segmento===seg)
     );
   }
