@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pesquisa de Satisfação do Cliente · Grandes Clientes</title>
@@ -754,11 +755,8 @@
       <div class="card">
         <h2>Evolução mensal</h2>
         <p class="sub">Registros e validações por mês, desde o início do projeto.</p>
-        <div style="overflow-x:auto;">
-          <table>
-            <thead><tr><th>Mês</th><th>Registrados</th><th>Validados</th><th>% validado</th></tr></thead>
-            <tbody id="tbody-evolucao-mensal"><tr class="empty-row"><td colspan="4">Carregando...</td></tr></tbody>
-          </table>
+        <div style="max-width:100%; height:320px;">
+          <canvas id="chart-evolucao-mensal"></canvas>
         </div>
       </div>
 
@@ -1706,7 +1704,9 @@
     const META_CONSOLIDADA_PG = 5542;
     const CARTEIRA_TOTAL_PG = 13583;
 
-    const nomesExecutivos = METAS.length ? METAS.map(m=>m.analista) : [...new Set(RECORDS.map(r=>r.analista).filter(Boolean))];
+    const PG_EXCLUIDOS = ['Alessandro Silveira', 'Fellipe Braga'];
+    const nomesExecutivos = (METAS.length ? METAS.map(m=>m.analista) : [...new Set(RECORDS.map(r=>r.analista).filter(Boolean))])
+      .filter(nome => !PG_EXCLUIDOS.includes(nome));
 
     // ---- meta individual por executivo (292 fixo) ----
     const tbodyPG = document.getElementById('tbody-painel-gerencial');
@@ -1749,16 +1749,28 @@
     });
     const mesesOrdenados = Object.keys(porMes).sort();
     const NOMES_MES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-    const tbodyMensal = document.getElementById('tbody-evolucao-mensal');
-    if(tbodyMensal){
-      tbodyMensal.innerHTML = mesesOrdenados.length===0 ? '<tr class="empty-row"><td colspan="4">Sem dados</td></tr>' :
-        mesesOrdenados.map(mes=>{
-          const v = porMes[mes];
-          const [ano,mm] = mes.split('-');
-          const label = NOMES_MES[parseInt(mm,10)-1] + '/' + ano;
-          const pct = v.registrados ? (v.validados/v.registrados*100).toFixed(0) : 0;
-          return `<tr><td>${label}</td><td>${v.registrados}</td><td>${v.validados}</td><td>${pct}%</td></tr>`;
-        }).join('');
+    const labelsMensal = mesesOrdenados.map(mes=>{
+      const [ano,mm] = mes.split('-');
+      return NOMES_MES[parseInt(mm,10)-1] + '/' + ano;
+    });
+    const canvasMensal = document.getElementById('chart-evolucao-mensal');
+    if(canvasMensal && window.Chart){
+      if(window._chartEvolucaoMensal) window._chartEvolucaoMensal.destroy();
+      window._chartEvolucaoMensal = new Chart(canvasMensal, {
+        type: 'bar',
+        data: {
+          labels: labelsMensal,
+          datasets: [
+            { label: 'Registrados', data: mesesOrdenados.map(m=>porMes[m].registrados), backgroundColor: '#9CC7E8' },
+            { label: 'Validados', data: mesesOrdenados.map(m=>porMes[m].validados), backgroundColor: '#2C9A66' }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom' } },
+          scales: { y: { beginAtZero: true } }
+        }
+      });
     }
 
     // ---- indicadores de atuação por curva (cruza com matriculas via login da gestora) ----
