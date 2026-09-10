@@ -693,8 +693,8 @@
   <!-- 4.5. META SEMANAL (público, sem login) -->
   <section id="view-meta-semanal" class="view">
     <div class="card">
-      <h2>Meta semanal — quem bateu (atendimentos registrados)</h2>
-      <p class="sub">Meta individual: 15/semana (segunda a domingo). Meta coletiva: 270 (18 executivos — Alessandro e Fellipe não entram nesse cálculo). Mínimo aceitável: 80% (216). Mesma régua usada na Atualização Cadastral.</p>
+      <h2>Meta semanal — quem bateu (atendimentos validados)</h2>
+      <p class="sub">Meta individual: 15/semana (segunda a domingo), contando a partir da validação da gestora — não do registro do executivo. Meta coletiva: 270 (18 executivos — Alessandro e Fellipe não entram nesse cálculo). Mínimo aceitável: 80% (216). Mesma régua usada na Atualização Cadastral.</p>
       <div class="kpi-row" style="grid-template-columns:repeat(4,1fr); margin-bottom:14px;">
         <div class="kpi"><div class="label">Meta coletiva (100%)</div><div class="value" id="ms-time-meta">270</div></div>
         <div class="kpi"><div class="label">Realizado pelo time</div><div class="value" id="ms-time-realizado">0</div></div>
@@ -709,7 +709,7 @@
       </div>
       <div style="overflow-x:auto;">
         <table>
-          <thead><tr><th>Analista</th><th>Registrados (semana)</th><th>Meta</th><th>% atingido</th><th>Situação</th></tr></thead>
+          <thead><tr><th>Analista</th><th>Validados (semana)</th><th>Meta</th><th>% atingido</th><th>Situação</th></tr></thead>
           <tbody id="tbody-meta-semanal-pesquisa"><tr class="empty-row"><td colspan="5">Carregando...</td></tr></tbody>
         </table>
       </div>
@@ -930,10 +930,13 @@
 
   // Um registro pode representar mais de uma matrícula (mesmo cliente, mesmo print).
   // Para efeito de meta/validação, cada matrícula listada conta como uma unidade.
+  // Aceita vírgula OU espaço como separador (algumas pessoas digitam sem vírgula).
+  function extrairMatriculasAdicionais(texto){
+    if(!texto) return [];
+    return texto.split(/[,\s]+/).map(s=>s.trim()).filter(Boolean);
+  }
   function contarMatriculas(r){
-    if(!r.matriculas_adicionais) return 1;
-    const extras = r.matriculas_adicionais.split(',').map(s=>s.trim()).filter(Boolean);
-    return 1 + extras.length;
+    return 1 + extrairMatriculasAdicionais(r.matriculas_adicionais).length;
   }
 
   // ---------- storage (Supabase) ----------
@@ -1140,6 +1143,8 @@
   });
 
   document.getElementById('btn-salvar-envio').addEventListener('click', async ()=>{
+    const btnSalvarEnvio = document.getElementById('btn-salvar-envio');
+    if(btnSalvarEnvio.disabled) return; // já está processando — evita clique duplo criar 2 registros
     const matricula = document.getElementById('in-matricula').value.trim();
     const telefone = document.getElementById('in-telefone').value.trim();
     const analista = document.getElementById('in-analista').value.trim();
@@ -1165,8 +1170,21 @@
     if(tipo==='Outros') tipo = 'Outros: ' + tipoOutros;
     const matriculasAdicionaisRaw = document.getElementById('in-matriculas-adicionais').value.trim();
     const matriculasAdicionais = matriculasAdicionaisRaw
-      ? [...new Set(matriculasAdicionaisRaw.split(',').map(s=>s.trim()).filter(s=>s && s!==matricula))].join(', ')
+      ? [...new Set(extrairMatriculasAdicionais(matriculasAdicionaisRaw).filter(s=>s!==matricula))].join(', ')
       : null;
+
+    // ---- bloqueio: não deixa registrar matrícula que já tem registro no sistema ----
+    function matriculaJaRegistrada(m){
+      return RECORDS.some(r => r.matricula === m || extrairMatriculasAdicionais(r.matriculas_adicionais).includes(m));
+    }
+    const todasMatriculasDoEnvio = [matricula, ...extrairMatriculasAdicionais(matriculasAdicionais)];
+    const jaExistentes = todasMatriculasDoEnvio.filter(m => matriculaJaRegistrada(m));
+    if(jaExistentes.length){
+      msg.style.color = 'var(--rose)';
+      msg.textContent = `A matrícula ${jaExistentes.join(', ')} já ${jaExistentes.length>1?'têm':'tem'} um registro no sistema. Procure por ${jaExistentes.length>1?'elas':'ela'} em "Lançar respostas" ou fale com a gestora se precisar reabrir.`;
+      return;
+    }
+
     const rec = {
       id: uid(), matricula, telefone, analista, tipo, superintendencia, segmento,
       matriculas_adicionais: matriculasAdicionais,
@@ -1178,7 +1196,9 @@
       validado_por: null, data_validacao: null, validacao_obs: null,
       qualidade_abastecimento: null, prazo_resolucao: null, motivo_contato: null
     };
+    btnSalvarEnvio.disabled = true;
     const ok = await saveRecord(rec);
+    btnSalvarEnvio.disabled = false;
     if(ok){
       RECORDS.push(rec);
       msg.style.color = 'var(--leaf)'; msg.textContent = 'Atendimento registrado.';
@@ -1874,10 +1894,10 @@
     const tbody = document.getElementById('tbody-meta-semanal-pesquisa');
     if(!tbody) return;
     const inicioSemana = inicioDaSemanaAtualPesquisa();
-    const registradosNaSemana = RECORDS.filter(r => r.data_envio && new Date(r.data_envio) >= inicioSemana);
+    const validadosNaSemana = RECORDS.filter(r => r.status==='validado' && r.data_validacao && new Date(r.data_validacao) >= inicioSemana);
 
     const porAnalista = {};
-    registradosNaSemana.forEach(r=>{
+    validadosNaSemana.forEach(r=>{
       const a = r.analista || '—';
       if(META_SEMANAL_EXCLUIDOS.includes(a)) return;
       porAnalista[a] = (porAnalista[a]||0) + contarMatriculas(r);
