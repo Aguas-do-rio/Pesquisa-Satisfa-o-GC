@@ -1113,6 +1113,17 @@
     }catch(e){ console.error('save error', e); return false; }
   }
 
+  async function deleteRecord(id){
+    if(!CONFIGURED) return false;
+    try{
+      const res = await fetch(SUPABASE_URL + '?id=eq.' + encodeURIComponent(id), {
+        method: 'DELETE',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+      });
+      return res.ok;
+    }catch(e){ console.error('delete error', e); return false; }
+  }
+
   // ---------- tabs ----------
   document.querySelectorAll('nav.tabs button').forEach(btn=>{
     btn.addEventListener('click', ()=>{
@@ -1242,12 +1253,31 @@
         <tr class="${r.id===selectedId?'selected':''}">
           <td>${escapeHtml(r.matricula)}</td><td>${escapeHtml(r.analista)}</td><td>${escapeHtml(r.tipo||'–')}</td>
           <td>${fmtDateOnlyBR(r.data_envio)}</td>
-          <td><button class="btn btn-ghost btn-sm" data-select="${r.id}">${r.id===selectedId?'Selecionado':'Selecionar'}</button></td>
+          <td style="white-space:nowrap;">
+            <button class="btn btn-ghost btn-sm" data-select="${r.id}">${r.id===selectedId?'Selecionado':'Selecionar'}</button>
+            <button class="btn btn-ghost btn-sm" data-excluir="${r.id}" style="color:var(--rose); border-color:var(--rose-line);" title="Apagar registro (registrado errado)">Excluir</button>
+          </td>
         </tr>
       `).join('');
 
     tb.querySelectorAll('[data-select]').forEach(btn=>{
       btn.addEventListener('click', ()=>{ selectedId = btn.dataset.select; renderLancar(); });
+    });
+
+    tb.querySelectorAll('[data-excluir]').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        const id = btn.dataset.excluir;
+        const rec = RECORDS.find(r=>r.id===id);
+        if(!rec) return;
+        if(!confirm(`Apagar o registro da matrícula ${rec.matricula} (${rec.analista})? Essa ação não pode ser desfeita.`)) return;
+        btn.disabled = true;
+        const ok = await deleteRecord(id);
+        if(ok){
+          RECORDS = RECORDS.filter(r=>r.id!==id);
+          if(selectedId===id) selectedId = null;
+          renderLancar(); renderRegistrar(); updateNavBadges();
+        } else { btn.disabled=false; alert('Erro ao apagar. Tente novamente.'); }
+      });
     });
 
     renderLancarForm();
