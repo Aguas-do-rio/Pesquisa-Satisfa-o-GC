@@ -1184,9 +1184,10 @@
       ? [...new Set(extrairMatriculasAdicionais(matriculasAdicionaisRaw).filter(s=>s!==matricula))].join(', ')
       : null;
 
-    // ---- bloqueio: não deixa registrar matrícula que já tem registro no sistema ----
+    // ---- bloqueio: não deixa registrar matrícula que já tem registro em andamento no sistema ----
+    // (registros rejeitados não bloqueiam — é justamente o caso em que precisa registrar de novo)
     function matriculaJaRegistrada(m){
-      return RECORDS.some(r => r.matricula === m || extrairMatriculasAdicionais(r.matriculas_adicionais).includes(m));
+      return RECORDS.some(r => r.status !== 'rejeitado' && (r.matricula === m || extrairMatriculasAdicionais(r.matriculas_adicionais).includes(m)));
     }
     const todasMatriculasDoEnvio = [matricula, ...extrairMatriculasAdicionais(matriculasAdicionais)];
     const jaExistentes = todasMatriculasDoEnvio.filter(m => matriculaJaRegistrada(m));
