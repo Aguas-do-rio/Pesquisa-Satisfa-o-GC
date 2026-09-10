@@ -346,7 +346,7 @@
     </button>
     <button data-view="painel-gestora">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
-      <span class="lbl">Painel da Gestora</span>
+      <span class="lbl">Painel Gerencial</span>
     </button>
   </nav>
 
@@ -709,8 +709,8 @@
   <!-- 5. PAINEL DA GESTORA (protegido por login) -->
   <section id="view-painel-gestora" class="view">
     <div class="card" id="gestora-login-card">
-      <h2>Painel da Gestora <span class="role-tag role-gestor">acesso restrito</span></h2>
-      <p class="sub">Entre com o e-mail e senha de gestora para ver o detalhamento completo das metas.</p>
+      <h2>Painel Gerencial <span class="role-tag role-gestor">acesso restrito</span></h2>
+      <p class="sub">Entre com o e-mail e senha de gestora para ver o painel completo.</p>
       <div class="field span3" style="max-width:320px;">
         <label>E-mail</label>
         <input type="email" id="gestora-login-email" placeholder="seu e-mail de acesso" autocomplete="off">
@@ -727,21 +727,51 @@
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;">
           <div>
-            <h2>Metas — visão completa</h2>
-            <p class="sub">Detalhamento completo por executivo. Casos de "Não foi possível realizar a pesquisa" reduzem a meta, sem afetar a nota final.</p>
+            <h2>Painel Gerencial</h2>
+            <p class="sub">Meta consolidada considerando 5 meses de atuação do projeto.</p>
           </div>
           <button class="btn btn-ghost btn-sm" id="btn-gestora-logout">Sair</button>
         </div>
-        <div class="kpi-row" style="margin-bottom:16px;">
-          <div class="kpi"><div class="label">Carteira total</div><div class="value" id="meta-carteira-total">0</div></div>
-          <div class="kpi"><div class="label">Meta consolidada (ajustada)</div><div class="value" id="meta-consolidada">0</div></div>
-          <div class="kpi leaf"><div class="label">Validados (com nota)</div><div class="value leaf" id="meta-validados">0</div></div>
-          <div class="kpi leaf"><div class="label">% atingido</div><div class="value leaf" id="meta-pct-atingido">0%</div></div>
+        <div class="kpi-row" style="margin-bottom:0;">
+          <div class="kpi"><div class="label">Carteira total</div><div class="value" id="pg-carteira-total">13.583</div></div>
+          <div class="kpi"><div class="label">Meta consolidada (5 meses)</div><div class="value" id="pg-meta-consolidada">5.542</div></div>
+          <div class="kpi leaf"><div class="label">Validados</div><div class="value leaf" id="pg-validados">0</div></div>
+          <div class="kpi amber"><div class="label">Falta</div><div class="value amber" id="pg-falta">0</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Meta individual por executivo</h2>
+        <p class="sub">Meta individual: 292 pesquisas validadas com nota por executivo.</p>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>Executivo</th><th>Meta</th><th>Validados c/ nota</th><th>% atingido</th><th>Nota média</th><th>Falta</th></tr></thead>
+            <tbody id="tbody-painel-gerencial"><tr class="empty-row"><td colspan="6">Carregando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Evolução mensal</h2>
+        <p class="sub">Registros e validações por mês, desde o início do projeto.</p>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>Mês</th><th>Registrados</th><th>Validados</th><th>% validado</th></tr></thead>
+            <tbody id="tbody-evolucao-mensal"><tr class="empty-row"><td colspan="4">Carregando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Indicadores de atuação por curva</h2>
+        <p class="sub">Matrículas atuadas na pesquisa cruzadas com a curva e o faturamento (base Carteira de Agosto).</p>
+        <div class="kpi-row" style="margin-bottom:14px;">
+          <div class="kpi leaf"><div class="label">Soma de Média Fat — total atuado</div><div class="value leaf" id="pg-fat-total">R$ 0</div></div>
         </div>
         <div style="overflow-x:auto;">
           <table>
-            <thead><tr><th>Executivo</th><th>Carteira</th><th>Meta original</th><th>Não foi possível (validados)</th><th>Meta ajustada</th><th>Validados c/ nota</th><th>% atingido</th><th>Nota média</th></tr></thead>
-            <tbody id="tbody-metas-completo"><tr class="empty-row"><td colspan="8">Carregando...</td></tr></tbody>
+            <thead><tr><th>Curva</th><th>Matrículas atuadas</th><th>Soma de Média Fat (R$)</th><th>Fat. médio/cliente (R$)</th></tr></thead>
+            <tbody id="tbody-atuacao-curva"><tr class="empty-row"><td colspan="4">Carregando...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -995,7 +1025,7 @@
     GESTORA_AUTENTICADA = true;
     document.getElementById('gestora-login-card').style.display = 'none';
     document.getElementById('gestora-conteudo').style.display = 'block';
-    renderMetasCompleto();
+    renderPainelGerencial();
   }
 
   document.getElementById('btn-gestora-login').addEventListener('click', async ()=>{
@@ -1076,7 +1106,7 @@
       if(btn.dataset.view === 'lancar') renderLancar();
       if(btn.dataset.view === 'validar') renderValidar();
       if(btn.dataset.view === 'meta-semanal') renderMetaSemanalPesquisa();
-      if(btn.dataset.view === 'painel-gestora' && GESTORA_AUTENTICADA) renderMetasCompleto();
+      if(btn.dataset.view === 'painel-gestora' && GESTORA_AUTENTICADA) renderPainelGerencial();
     });
   });
 
@@ -1668,42 +1698,112 @@
         </tr>`;
       }).join('');
     }
-    if(GESTORA_AUTENTICADA) renderMetasCompleto();
+    if(GESTORA_AUTENTICADA) renderPainelGerencial();
   }
 
-  function renderMetasCompleto(){
-    const tbody = document.getElementById('tbody-metas-completo');
-    if(!tbody) return;
-    if(METAS.length === 0){
-      tbody.innerHTML = '<tr class="empty-row"><td colspan="8">Nenhuma meta cadastrada (tabela metas_executivos vazia).</td></tr>';
-      return;
+  async function renderPainelGerencial(){
+    const META_INDIVIDUAL_PG = 292;
+    const META_CONSOLIDADA_PG = 5542;
+    const CARTEIRA_TOTAL_PG = 13583;
+
+    const nomesExecutivos = METAS.length ? METAS.map(m=>m.analista) : [...new Set(RECORDS.map(r=>r.analista).filter(Boolean))];
+
+    // ---- meta individual por executivo (292 fixo) ----
+    const tbodyPG = document.getElementById('tbody-painel-gerencial');
+    let somaValidadosTotal = 0;
+    const linhasPG = nomesExecutivos.map(nome=>{
+      const doAnalista = RECORDS.filter(r=>r.analista===nome);
+      const validadosComNota = doAnalista.filter(r=>r.status==='validado' && r.nota_atendimento!=null).length;
+      const somaNota = doAnalista.reduce((s,r)=> (r.status==='validado' && r.nota_atendimento!=null) ? s + r.nota_atendimento : s, 0);
+      const notaMedia = validadosComNota ? (somaNota/validadosComNota).toFixed(1) : '–';
+      const pct = (validadosComNota/META_INDIVIDUAL_PG*100);
+      const falta = Math.max(0, META_INDIVIDUAL_PG - validadosComNota);
+      somaValidadosTotal += validadosComNota;
+      return { nome, validadosComNota, pct, notaMedia, falta };
+    }).sort((a,b)=> b.pct - a.pct);
+
+    if(tbodyPG){
+      tbodyPG.innerHTML = linhasPG.map(l=>{
+        const cor = l.pct >= 100 ? 'var(--leaf)' : l.pct >= 70 ? 'var(--amber)' : 'var(--rose)';
+        return `<tr>
+          <td>${escapeHtml(l.nome)}</td><td>${META_INDIVIDUAL_PG}</td><td>${l.validadosComNota}</td>
+          <td style="color:${cor}; font-weight:700;">${l.pct.toFixed(0)}%</td>
+          <td>${l.notaMedia === '–' ? '–' : l.notaMedia + ' ★'}</td><td>${l.falta}</td>
+        </tr>`;
+      }).join('');
     }
-    let somaCarteira = 0, somaMetaAjustada = 0, somaValidadosComNota = 0;
-    const linhas = calcularMetas();
-    linhas.forEach(({m,metaAjustada,validadosComNota})=>{
-      somaCarteira += (m.carteira_total||0);
-      somaMetaAjustada += metaAjustada;
-      somaValidadosComNota += validadosComNota;
+
+    document.getElementById('pg-carteira-total').textContent = CARTEIRA_TOTAL_PG.toLocaleString('pt-BR');
+    document.getElementById('pg-meta-consolidada').textContent = META_CONSOLIDADA_PG.toLocaleString('pt-BR');
+    document.getElementById('pg-validados').textContent = somaValidadosTotal.toLocaleString('pt-BR');
+    document.getElementById('pg-falta').textContent = Math.max(0, META_CONSOLIDADA_PG - somaValidadosTotal).toLocaleString('pt-BR');
+
+    // ---- evolução mensal ----
+    const porMes = {};
+    RECORDS.forEach(r=>{
+      if(!r.data_envio) return;
+      const mes = r.data_envio.slice(0,7); // YYYY-MM
+      if(!porMes[mes]) porMes[mes] = { registrados:0, validados:0 };
+      porMes[mes].registrados++;
+      if(r.status==='validado') porMes[mes].validados++;
     });
+    const mesesOrdenados = Object.keys(porMes).sort();
+    const NOMES_MES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    const tbodyMensal = document.getElementById('tbody-evolucao-mensal');
+    if(tbodyMensal){
+      tbodyMensal.innerHTML = mesesOrdenados.length===0 ? '<tr class="empty-row"><td colspan="4">Sem dados</td></tr>' :
+        mesesOrdenados.map(mes=>{
+          const v = porMes[mes];
+          const [ano,mm] = mes.split('-');
+          const label = NOMES_MES[parseInt(mm,10)-1] + '/' + ano;
+          const pct = v.registrados ? (v.validados/v.registrados*100).toFixed(0) : 0;
+          return `<tr><td>${label}</td><td>${v.registrados}</td><td>${v.validados}</td><td>${pct}%</td></tr>`;
+        }).join('');
+    }
 
-    tbody.innerHTML = linhas.map(({m,impossibilidadeValidada,validadosComNota,metaAjustada,pctAtingido,notaMediaAnalista})=>{
-      const cor = pctAtingido >= 100 ? 'var(--leaf)' : pctAtingido >= 70 ? 'var(--amber)' : 'var(--rose)';
-      return `<tr>
-        <td>${escapeHtml(m.analista)}</td>
-        <td>${m.carteira_total||0}</td>
-        <td>${m.meta_quantidade||0}</td>
-        <td>${impossibilidadeValidada}</td>
-        <td>${metaAjustada}</td>
-        <td>${validadosComNota}</td>
-        <td style="color:${cor}; font-weight:700;">${pctAtingido.toFixed(0)}%</td>
-        <td>${notaMediaAnalista === '–' ? '–' : notaMediaAnalista + ' ★'}</td>
-      </tr>`;
-    }).join('');
+    // ---- indicadores de atuação por curva (cruza com matriculas via login da gestora) ----
+    const tbodyCurva = document.getElementById('tbody-atuacao-curva');
+    if(tbodyCurva && GESTORA_TOKEN){
+      try{
+        let matriculasInfo = [];
+        let offset = 0; const pageSize = 1000;
+        while(true){
+          const res = await fetch(SUPABASE_BASE_URL + '/matriculas?select=matricula,curva,media_fat', {
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + GESTORA_TOKEN, 'Range': offset + '-' + (offset+pageSize-1) }
+          });
+          if(!res.ok) throw new Error('HTTP ' + res.status);
+          const pagina = await res.json();
+          matriculasInfo = matriculasInfo.concat(pagina);
+          if(pagina.length < pageSize) break;
+          offset += pageSize;
+        }
+        const infoPorMatricula = {};
+        matriculasInfo.forEach(m=>{ infoPorMatricula[String(m.matricula)] = m; });
 
-    document.getElementById('meta-carteira-total').textContent = somaCarteira.toLocaleString('pt-BR');
-    document.getElementById('meta-consolidada').textContent = somaMetaAjustada.toLocaleString('pt-BR');
-    document.getElementById('meta-validados').textContent = somaValidadosComNota.toLocaleString('pt-BR');
-    document.getElementById('meta-pct-atingido').textContent = somaMetaAjustada ? (somaValidadosComNota/somaMetaAjustada*100).toFixed(1).replace('.',',') + '%' : '0%';
+        const matriculasAtuadas = [...new Set(RECORDS.map(r=>r.matricula))];
+        const porCurva = {};
+        matriculasAtuadas.forEach(mat=>{
+          const info = infoPorMatricula[mat];
+          const curva = info ? (info.curva || 'Sem curva') : 'Não encontrada na base';
+          const fat = info && info.media_fat ? Number(info.media_fat) : 0;
+          if(!porCurva[curva]) porCurva[curva] = { qtd:0, fat:0 };
+          porCurva[curva].qtd++; porCurva[curva].fat += fat;
+        });
+        const ORDEM_CURVA_PG = { 'Estrategico':0, 'Cliente A':1, 'Cliente B':2, 'Cliente C':3, 'Cliente D':4 };
+        const linhasCurva = Object.entries(porCurva).sort((a,b)=> (ORDEM_CURVA_PG[a[0]]??9) - (ORDEM_CURVA_PG[b[0]]??9));
+        const fatTotalGeral = Object.values(porCurva).reduce((s,v)=>s+v.fat,0);
+        document.getElementById('pg-fat-total').textContent = fatTotalGeral.toLocaleString('pt-BR', {style:'currency', currency:'BRL', maximumFractionDigits:0});
+        tbodyCurva.innerHTML = linhasCurva.length===0 ? '<tr class="empty-row"><td colspan="4">Sem dados</td></tr>' :
+          linhasCurva.map(([curva,v])=>{
+            const media = v.qtd ? v.fat/v.qtd : 0;
+            const fmt = n => n.toLocaleString('pt-BR', {style:'currency', currency:'BRL', maximumFractionDigits:0});
+            return `<tr><td>${escapeHtml(curva)}</td><td>${v.qtd}</td><td>${fmt(v.fat)}</td><td>${fmt(media)}</td></tr>`;
+          }).join('');
+      }catch(e){
+        console.error('atuacao por curva error', e);
+        tbodyCurva.innerHTML = '<tr class="empty-row"><td colspan="4">Não foi possível carregar (erro ao buscar a base de matrículas).</td></tr>';
+      }
+    }
 
     renderMetaSemanalPesquisa();
   }
