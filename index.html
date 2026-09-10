@@ -2,6 +2,7 @@
 <html lang="pt-BR">
 <head>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pesquisa de Satisfação do Cliente · Grandes Clientes</title>
@@ -1756,6 +1757,7 @@
     const canvasMensal = document.getElementById('chart-evolucao-mensal');
     if(canvasMensal && window.Chart){
       if(window._chartEvolucaoMensal) window._chartEvolucaoMensal.destroy();
+      if(window.ChartDataLabels) Chart.register(window.ChartDataLabels);
       window._chartEvolucaoMensal = new Chart(canvasMensal, {
         type: 'bar',
         data: {
@@ -1767,7 +1769,13 @@
         },
         options: {
           responsive: true, maintainAspectRatio: false,
-          plugins: { legend: { position: 'bottom' } },
+          plugins: {
+            legend: { position: 'bottom' },
+            datalabels: {
+              anchor: 'end', align: 'top', color: '#12232F', font: { weight: 'bold', size: 11 },
+              formatter: (value) => value > 0 ? value : ''
+            }
+          },
           scales: { y: { beginAtZero: true } }
         }
       });
