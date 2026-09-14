@@ -1641,7 +1641,7 @@
         const rec = RECORDS.find(r=>r.id===id);
         if(!rec) return;
         rec.status = isApprove ? 'validado' : 'rejeitado';
-        rec.validado_por = gestor; rec.data_validacao = todayISO(); rec.validacao_obs = obs || null;
+        rec.validado_por = gestor; rec.data_validacao = nowISO(); rec.validacao_obs = obs || null;
         btn.disabled = true;
         const ok = await saveRecord(rec);
         if(ok){ renderValidar(); renderRegistrar(); renderPainel(); updateNavBadges(); } else { btn.disabled=false; alert('Erro ao salvar.'); }
@@ -1660,7 +1660,7 @@
       btn.disabled = true;
       msg.style.color='var(--text-mut)'; msg.textContent = `Validando ${pendentes.length} registros...`;
 
-      const agora = todayISO();
+      const agora = nowISO();
       const idsFiltro = pendentes.map(r=>`"${r.id}"`).join(',');
       try{
         const res = await fetch(SUPABASE_URL + '?id=in.(' + idsFiltro + ')', {
