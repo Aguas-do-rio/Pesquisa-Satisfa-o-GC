@@ -1728,17 +1728,18 @@
     const map = {};
     records.forEach(r=>{
       const k = r[key] || '—';
-      if(!map[k]) map[k] = { enviados:0, respondidos:0, validados:0, validadosComNota:0, somaNota:0 };
-      map[k].enviados++;
-      if(r.status!=='pendente') map[k].respondidos++;
+      if(!map[k]) map[k] = { enviados:0, respondidos:0, validados:0, validadosComNota:0, somaNota:0, registrosComNota:0 };
+      const qtd = contarMatriculas(r);
+      map[k].enviados += qtd;
+      if(r.status!=='pendente') map[k].respondidos += qtd;
       if(r.status==='validado'){
-        map[k].validados++;
-        if(r.nota_atendimento!=null){ map[k].validadosComNota++; map[k].somaNota += r.nota_atendimento; }
+        map[k].validados += qtd;
+        if(r.nota_atendimento!=null){ map[k].validadosComNota += qtd; map[k].somaNota += r.nota_atendimento; map[k].registrosComNota++; }
       }
     });
     return Object.entries(map).map(([k,v])=>({
       nome:k, enviados:v.enviados, respondidos:v.respondidos, validados:v.validados,
-      nota: v.validadosComNota ? (v.somaNota/v.validadosComNota).toFixed(1) : '–'
+      nota: v.registrosComNota ? (v.somaNota/v.registrosComNota).toFixed(1) : '–'
     })).sort((a,b)=>b.enviados-a.enviados);
   }
 
