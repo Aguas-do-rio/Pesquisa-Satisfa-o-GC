@@ -1991,13 +1991,14 @@
   function renderPainel(){
     populateFilters();
     const records = filteredRecords();
-    const enviados = records.length;
-    const respondidos = records.filter(r=>r.status!=='pendente').length;
-    const validados = records.filter(r=>r.status==='validado').length;
+    const enviados = records.reduce((s,r)=>s+contarMatriculas(r),0);
+    const respondidos = records.filter(r=>r.status!=='pendente').reduce((s,r)=>s+contarMatriculas(r),0);
+    const validados = records.filter(r=>r.status==='validado').reduce((s,r)=>s+contarMatriculas(r),0);
     const abstencaoPct = enviados ? Math.round(((enviados-respondidos)/enviados)*100) : 0;
     const respostaPct = enviados ? Math.round((respondidos/enviados)*100) : 0;
     // Registros "Não foi possível realizar a pesquisa" têm nota nula por definição —
     // entram no total de validados, mas não contam para nota média nem PLR.
+    // A nota média continua por atendimento (não multiplica pela qtd. de matrículas do grupo).
     const validadosComNota = records.filter(r=>r.status==='validado' && r.nota_atendimento!=null);
     const somaNota = validadosComNota.reduce((s,r)=> s + r.nota_atendimento, 0);
     const notaMedia = validadosComNota.length ? (somaNota/validadosComNota.length).toFixed(1) : '–';
