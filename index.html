@@ -2064,18 +2064,27 @@
   });
 
   // ---------- export ----------
+  // Expande um registro em uma linha por matrícula (a principal + cada uma das
+  // adicionais), pra base exportada bater com o total usado na meta/validação.
+  function expandirLinhasPorMatricula(r, montarLinha){
+    const linhaPrincipal = montarLinha(r.matricula, false);
+    const extras = extrairMatriculasAdicionais(r.matriculas_adicionais);
+    const linhasExtras = extras.map(m => montarLinha(m, true));
+    return [linhaPrincipal, ...linhasExtras];
+  }
+
   function buildCSVString(idsComImagem){
     const records = filteredRecords();
-    const header = ['Matricula','Telefone','Analista','Tipo','Superintendencia','Segmento','Registrado em','Status',
+    const header = ['Matricula','Matricula agrupada com','Telefone','Analista','Tipo','Superintendencia','Segmento','Registrado em','Status',
       'Nota executivo','Evidencia','Imagem anexada','Validado por','Data validacao','Observacao validacao',
       'Qualidade abastecimento','Prazo resolucao','Motivo contato'];
-    const rows = records.map(r=>[
-      r.matricula, r.telefone||'', r.analista, r.tipo||'', r.superintendencia, r.segmento||'',
+    const rows = records.flatMap(r => expandirLinhasPorMatricula(r, (matricula, ehAdicional) => [
+      matricula, ehAdicional ? r.matricula : '', r.telefone||'', r.analista, r.tipo||'', r.superintendencia, r.segmento||'',
       fmtDateBR(r.data_envio), r.status, r.nota_atendimento||'', EVID_LABEL[r.evidencia_tipo]||'',
       (idsComImagem ? idsComImagem.has(r.id) : !!r.evidencia_imagem) ? 'Sim' : 'Não',
       r.validado_por||'', fmtDateOnlyBR(r.data_validacao), r.validacao_obs||'',
       r.qualidade_abastecimento||'', r.prazo_resolucao||'', r.motivo_contato||''
-    ]);
+    ]));
     return [header, ...rows].map(row => row.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(';')).join('\n');
   }
 
@@ -2112,11 +2121,13 @@
 
   document.getElementById('btn-export-rejeitados').addEventListener('click', ()=>{
     const rejeitados = RECORDS.filter(r=>r.status==='rejeitado');
-    const header = ['Matrícula','Analista','Data','Justificativa da rejeição'];
-    const rows = rejeitados.map(r=>[r.matricula, r.analista, fmtDateOnlyBR(r.data_validacao), r.validacao_obs||'']);
+    const header = ['Matrícula','Matrícula agrupada com','Analista','Data','Justificativa da rejeição'];
+    const rows = rejeitados.flatMap(r => expandirLinhasPorMatricula(r, (matricula, ehAdicional) =>
+      [matricula, ehAdicional ? r.matricula : '', r.analista, fmtDateOnlyBR(r.data_validacao), r.validacao_obs||'']
+    ));
     baixarCSVGenerico(header, rows, 'pesquisa_satisfacao_rejeitados.csv');
     const msg = document.getElementById('msg-export-gestora');
-    msg.style.color = 'var(--leaf)'; msg.textContent = `${rejeitados.length} registro(s) rejeitado(s) exportado(s).`;
+    msg.style.color = 'var(--leaf)'; msg.textContent = `${rows.length} matrícula(s) rejeitada(s) exportada(s).`;
     setTimeout(()=>{ msg.textContent=''; }, 4000);
   });
 
@@ -2124,12 +2135,14 @@
     const limite = new Date(Date.now() - dias*24*60*60*1000);
     const doPeriodo = RECORDS.filter(r=> r.data_envio && new Date(r.data_envio) >= limite);
     const STATUS_LABEL_EXPORT = { pendente:'Aguardando resposta', aguardando_validacao:'Aguardando validação', validado:'Validado', rejeitado:'Rejeitado' };
-    const header = ['Matrícula','Analista','Data','Status'];
+    const header = ['Matrícula','Matrícula agrupada com','Analista','Data','Status'];
     const rows = doPeriodo
       .sort((a,b)=> (a.analista||'').localeCompare(b.analista||'') || (a.data_envio||'').localeCompare(b.data_envio||''))
-      .map(r=>[r.matricula, r.analista, fmtDateBR(r.data_envio), STATUS_LABEL_EXPORT[r.status]||r.status]);
+      .flatMap(r => expandirLinhasPorMatricula(r, (matricula, ehAdicional) =>
+        [matricula, ehAdicional ? r.matricula : '', r.analista, fmtDateBR(r.data_envio), STATUS_LABEL_EXPORT[r.status]||r.status]
+      ));
     baixarCSVGenerico(header, rows, nomeArquivo);
-    return doPeriodo.length;
+    return rows.length;
   }
 
   document.getElementById('btn-export-atuacao-semanal').addEventListener('click', ()=>{
