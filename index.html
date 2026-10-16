@@ -1782,8 +1782,8 @@
     const META_CONSOLIDADA_PG = 5542;
     const CARTEIRA_TOTAL_PG = 13583;
 
-    const PG_EXCLUIDOS = ['Alessandro Silveira', 'Fellipe Braga'];
-    const nomesExecutivos = (METAS.length ? METAS.map(m=>m.analista) : [...new Set(RECORDS.map(r=>r.analista).filter(Boolean))])
+    const PG_EXCLUIDOS = ['Alessandro Silveira', 'Fellipe Braga', 'Mirella Saviti']; // Mirella foi substituída pela Luciana Pires (meta total não muda)
+    const nomesExecutivos = [...new Set([...METAS.map(m=>m.analista), ...RECORDS.map(r=>r.analista).filter(Boolean)])]
       .filter(nome => !PG_EXCLUIDOS.includes(nome));
 
     // ---- meta individual por executivo (292 fixo) ----
@@ -1908,7 +1908,7 @@
   }
 
   const META_SEMANAL_PESQUISA = 15;
-  const META_SEMANAL_EXCLUIDOS = ['Alessandro Silveira', 'Fellipe Braga'];
+  const META_SEMANAL_EXCLUIDOS = ['Alessandro Silveira', 'Fellipe Braga', 'Mirella Saviti']; // substituída pela Luciana Pires
   const META_SEMANAL_TAMANHO_TIME = 18; // reservando sempre 1 executivo de férias
   const META_SEMANAL_TIME_100 = META_SEMANAL_TAMANHO_TIME * META_SEMANAL_PESQUISA; // 270
   const META_SEMANAL_TIME_80 = Math.ceil(META_SEMANAL_TIME_100 * 0.8); // 216
@@ -1936,7 +1936,7 @@
       porAnalista[a] = (porAnalista[a]||0) + contarMatriculas(r);
     });
 
-    const nomesAnalistas = (METAS.length ? METAS.map(m=>m.analista) : [...new Set(RECORDS.map(r=>r.analista).filter(Boolean))])
+    const nomesAnalistas = [...new Set([...METAS.map(m=>m.analista), ...RECORDS.map(r=>r.analista).filter(Boolean)])]
       .filter(a => !META_SEMANAL_EXCLUIDOS.includes(a));
     const linhas = nomesAnalistas.map(analista=>{
       const registrados = porAnalista[analista] || 0;
