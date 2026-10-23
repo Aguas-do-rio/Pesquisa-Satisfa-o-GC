@@ -419,6 +419,15 @@
           <label>Número da OS que justifica a impossibilidade</label>
           <input type="text" id="in-os-impossibilidade" placeholder="Ex: 123456">
         </div>
+        <div class="field span2" id="in-evid-impossibilidade-wrap" style="display:none;">
+          <label>Evidência (print da OS) <span style="font-weight:500; color:var(--text-faint);">— obrigatória; o registro já segue direto para validação</span></label>
+          <div class="upload-box" id="in-evid-box">
+            <div class="upload-row"><input type="file" id="in-evid-arquivo" accept="image/*"></div>
+            <div id="in-evid-preview"></div>
+            <div id="in-evid-msg"></div>
+            <div class="upload-hint">Aceita JPG, PNG ou WEBP. A imagem é redimensionada e comprimida automaticamente antes de salvar.</div>
+          </div>
+        </div>
         <div class="field span2">
           <label>Superintendência <span style="font-weight:500; color:var(--text-faint);">(marque mais de uma se as matrículas forem de superintendências diferentes)</span></label>
           <div id="in-superintendencia-checks" style="display:flex; flex-wrap:wrap; gap:10px; padding:9px 0;">
@@ -746,18 +755,20 @@
         <div class="kpi-row" style="margin-bottom:0;">
           <div class="kpi"><div class="label">Carteira total</div><div class="value" id="pg-carteira-total">13.583</div></div>
           <div class="kpi"><div class="label">Meta consolidada (5 meses)</div><div class="value" id="pg-meta-consolidada">5.542</div></div>
-          <div class="kpi leaf"><div class="label">Validados</div><div class="value leaf" id="pg-validados">0</div></div>
-          <div class="kpi amber"><div class="label">Falta</div><div class="value amber" id="pg-falta">0</div></div>
+          <div class="kpi leaf"><div class="label">Validados (sem somar)</div><div class="value leaf" id="pg-validados">0</div></div>
+          <div class="kpi"><div class="label">Não respondidas</div><div class="value rose" id="pg-nao-resp">0</div></div>
+          <div class="kpi leaf"><div class="label">Validados + não respondidas</div><div class="value leaf" id="pg-validados-mais-nr">0</div></div>
+          <div class="kpi amber"><div class="label">Falta (somando)</div><div class="value amber" id="pg-falta">0</div></div>
         </div>
       </div>
 
       <div class="card">
         <h2>Meta individual por executivo</h2>
-        <p class="sub">Meta individual: 292 pesquisas validadas com nota por executivo.</p>
+        <p class="sub">Meta individual: 292 pesquisas validadas com nota por executivo. "Não respondidas" são os atendimentos "Não foi possível realizar a pesquisa" já validados. Aparecem à parte e também somados ao realizado (as duas leituras lado a lado).</p>
         <div style="overflow-x:auto;">
           <table>
-            <thead><tr><th>Executivo</th><th>Meta</th><th>Validados c/ nota</th><th>% atingido</th><th>Nota média</th><th>Falta</th></tr></thead>
-            <tbody id="tbody-painel-gerencial"><tr class="empty-row"><td colspan="6">Carregando...</td></tr></tbody>
+            <thead><tr><th>Executivo</th><th>Meta</th><th>Validados c/ nota</th><th>% (sem somar)</th><th>Não respondidas</th><th>Validados + não respondidas</th><th>% (somando)</th><th>Nota média</th><th>Falta (somando)</th></tr></thead>
+            <tbody id="tbody-painel-gerencial"><tr class="empty-row"><td colspan="9">Carregando...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -1152,6 +1163,49 @@
   document.getElementById('in-tipo').addEventListener('change', (e)=>{
     document.getElementById('in-tipo-outros-wrap').style.display = e.target.value==='Outros' ? 'flex' : 'none';
     document.getElementById('in-os-impossibilidade-wrap').style.display = e.target.value===TIPO_IMPOSSIBILIDADE ? 'flex' : 'none';
+    document.getElementById('in-evid-impossibilidade-wrap').style.display = e.target.value===TIPO_IMPOSSIBILIDADE ? 'flex' : 'none';
+  });
+
+  // ---- evidência anexada já no registro ("Não foi possível realizar a pesquisa") ----
+  let evidRegistroData = null, evidRegistroNome = null;
+  function comprimirImagemRegistro(file){
+    return new Promise((resolve, reject)=>{
+      if(!file.type.startsWith('image/')){ reject(new Error('tipo')); return; }
+      const reader = new FileReader();
+      reader.onload = (e)=>{
+        const img = new Image();
+        img.onload = ()=>{
+          const scale = Math.min(1, 1000 / img.width);
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.round(img.width*scale)); canvas.height = Math.max(1, Math.round(img.height*scale));
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', 0.72));
+        };
+        img.onerror = ()=>reject(new Error('imagem'));
+        img.src = e.target.result;
+      };
+      reader.onerror = ()=>reject(new Error('leitura'));
+      reader.readAsDataURL(file);
+    });
+  }
+  function renderEvidRegistroPreview(){
+    const prev = document.getElementById('in-evid-preview'), box = document.getElementById('in-evid-box');
+    document.getElementById('in-evid-msg').innerHTML = '';
+    if(!evidRegistroData){ prev.innerHTML = ''; box.classList.remove('has-file'); return; }
+    box.classList.add('has-file');
+    prev.innerHTML = `<div class="upload-thumb" style="margin-top:10px;"><img src="${evidRegistroData}" data-lightbox alt="Prévia da evidência"><span class="name">${escapeHtml(evidRegistroNome||'evidencia.jpg')}</span><button type="button" class="remove" id="in-evid-remove">Remover</button></div>`;
+    document.getElementById('in-evid-remove').addEventListener('click', ()=>{ evidRegistroData=null; evidRegistroNome=null; document.getElementById('in-evid-arquivo').value=''; renderEvidRegistroPreview(); });
+  }
+  document.getElementById('in-evid-arquivo').addEventListener('change', async (e)=>{
+    const file = e.target.files && e.target.files[0];
+    const msgE = document.getElementById('in-evid-msg');
+    if(!file) return;
+    msgE.innerHTML = '<span style="font-size:12px; color:var(--text-mut);">Processando imagem...</span>';
+    try{
+      const dataUrl = await comprimirImagemRegistro(file);
+      if(dataUrl.length > 1_400_000){ msgE.innerHTML = '<div class="upload-err">Imagem ainda muito grande após compressão. Tente uma foto com menos resolução.</div>'; e.target.value=''; return; }
+      evidRegistroData = dataUrl; evidRegistroNome = file.name; renderEvidRegistroPreview();
+    }catch(err){ msgE.innerHTML = '<div class="upload-err">Não foi possível processar esse arquivo. Envie uma imagem (JPG, PNG ou WEBP).</div>'; e.target.value=''; }
   });
 
   document.getElementById('btn-salvar-envio').addEventListener('click', async ()=>{
@@ -1179,6 +1233,10 @@
       msg.style.color = 'var(--rose)'; msg.textContent = 'Informe o número da OS que justifica a impossibilidade da pesquisa.';
       return;
     }
+    if(tipo===TIPO_IMPOSSIBILIDADE && !evidRegistroData){
+      msg.style.color = 'var(--rose)'; msg.textContent = 'Anexe a evidência (print da OS) para registrar "Não foi possível realizar a pesquisa".';
+      return;
+    }
     if(tipo==='Outros') tipo = 'Outros: ' + tipoOutros;
     const matriculasAdicionaisRaw = document.getElementById('in-matriculas-adicionais').value.trim();
     const matriculasAdicionais = matriculasAdicionaisRaw
@@ -1203,9 +1261,13 @@
       matriculas_adicionais: matriculasAdicionais,
       numero_os_impossibilidade: tipo===TIPO_IMPOSSIBILIDADE ? numeroOsImpossibilidade : null,
       data_envio: nowISO(),
-      status: 'pendente', // pendente -> aguardando_validacao -> validado | rejeitado (refere-se à pergunta 1)
-      data_resposta: null,
-      nota_atendimento: null, evidencia_tipo: null, evidencia_imagem: null, evidencia_imagem_nome: null,
+      // "Não foi possível realizar a pesquisa": já nasce com a evidência e segue direto para validação (sem passar por "Lançar respostas")
+      status: tipo===TIPO_IMPOSSIBILIDADE ? 'aguardando_validacao' : 'pendente', // pendente -> aguardando_validacao -> validado | rejeitado (refere-se à pergunta 1)
+      data_resposta: tipo===TIPO_IMPOSSIBILIDADE ? todayISO() : null,
+      nota_atendimento: null, evidencia_tipo: null,
+      evidencia_imagem: tipo===TIPO_IMPOSSIBILIDADE ? evidRegistroData : null,
+      evidencia_imagem_nome: tipo===TIPO_IMPOSSIBILIDADE ? evidRegistroNome : null,
+      _imagemCarregada: tipo===TIPO_IMPOSSIBILIDADE,
       validado_por: null, data_validacao: null, validacao_obs: null,
       qualidade_abastecimento: null, prazo_resolucao: null, motivo_contato: null
     };
@@ -1222,6 +1284,8 @@
       document.getElementById('in-tipo-outros-wrap').style.display='none';
       document.getElementById('in-os-impossibilidade').value='';
       document.getElementById('in-os-impossibilidade-wrap').style.display='none';
+      evidRegistroData = null; evidRegistroNome = null; document.getElementById('in-evid-arquivo').value=''; renderEvidRegistroPreview();
+      document.getElementById('in-evid-impossibilidade-wrap').style.display='none';
       renderRegistrar(); updateNavBadges();
       setTimeout(()=>{ msg.textContent=''; }, 3000);
     } else { msg.style.color = 'var(--rose)'; msg.textContent = 'Erro ao salvar. Tente novamente.'; }
@@ -1788,25 +1852,32 @@
 
     // ---- meta individual por executivo (292 fixo) ----
     const tbodyPG = document.getElementById('tbody-painel-gerencial');
-    let somaValidadosTotal = 0;
+    let somaValidadosTotal = 0, somaNaoRespTotal = 0;
     const linhasPG = nomesExecutivos.map(nome=>{
       const doAnalista = RECORDS.filter(r=>r.analista===nome);
       const registrosComNota = doAnalista.filter(r=>r.status==='validado' && r.nota_atendimento!=null);
       const validadosComNota = registrosComNota.reduce((s,r)=>s+contarMatriculas(r),0);
       const somaNota = registrosComNota.reduce((s,r)=> s + r.nota_atendimento, 0);
       const notaMedia = registrosComNota.length ? (somaNota/registrosComNota.length).toFixed(1) : '–';
+      const naoResp = doAnalista.filter(r=>r.status==='validado' && r.tipo===TIPO_IMPOSSIBILIDADE).reduce((s,r)=>s+contarMatriculas(r),0);
+      const totalSomando = validadosComNota + naoResp;
       const pct = (validadosComNota/META_INDIVIDUAL_PG*100);
-      const falta = Math.max(0, META_INDIVIDUAL_PG - validadosComNota);
+      const pctSomando = (totalSomando/META_INDIVIDUAL_PG*100);
+      const falta = Math.max(0, META_INDIVIDUAL_PG - totalSomando);
       somaValidadosTotal += validadosComNota;
-      return { nome, validadosComNota, pct, notaMedia, falta };
-    }).sort((a,b)=> b.pct - a.pct);
+      somaNaoRespTotal += naoResp;
+      return { nome, validadosComNota, pct, notaMedia, falta, naoResp, totalSomando, pctSomando };
+    }).sort((a,b)=> b.pctSomando - a.pctSomando);
 
     if(tbodyPG){
       tbodyPG.innerHTML = linhasPG.map(l=>{
         const cor = l.pct >= 100 ? 'var(--leaf)' : l.pct >= 70 ? 'var(--amber)' : 'var(--rose)';
+        const corS = l.pctSomando >= 100 ? 'var(--leaf)' : l.pctSomando >= 70 ? 'var(--amber)' : 'var(--rose)';
         return `<tr>
           <td>${escapeHtml(l.nome)}</td><td>${META_INDIVIDUAL_PG}</td><td>${l.validadosComNota}</td>
           <td style="color:${cor}; font-weight:700;">${l.pct.toFixed(0)}%</td>
+          <td>${l.naoResp}</td><td>${l.totalSomando}</td>
+          <td style="color:${corS}; font-weight:700;">${l.pctSomando.toFixed(0)}%</td>
           <td>${l.notaMedia === '–' ? '–' : l.notaMedia + ' ★'}</td><td>${l.falta}</td>
         </tr>`;
       }).join('');
@@ -1815,7 +1886,9 @@
     document.getElementById('pg-carteira-total').textContent = CARTEIRA_TOTAL_PG.toLocaleString('pt-BR');
     document.getElementById('pg-meta-consolidada').textContent = META_CONSOLIDADA_PG.toLocaleString('pt-BR');
     document.getElementById('pg-validados').textContent = somaValidadosTotal.toLocaleString('pt-BR');
-    document.getElementById('pg-falta').textContent = Math.max(0, META_CONSOLIDADA_PG - somaValidadosTotal).toLocaleString('pt-BR');
+    document.getElementById('pg-nao-resp').textContent = somaNaoRespTotal.toLocaleString('pt-BR');
+    document.getElementById('pg-validados-mais-nr').textContent = (somaValidadosTotal + somaNaoRespTotal).toLocaleString('pt-BR');
+    document.getElementById('pg-falta').textContent = Math.max(0, META_CONSOLIDADA_PG - somaValidadosTotal - somaNaoRespTotal).toLocaleString('pt-BR');
 
     // ---- evolução mensal ----
     const porMes = {};
