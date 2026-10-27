@@ -1249,10 +1249,19 @@
       return RECORDS.some(r => r.status !== 'rejeitado' && (r.matricula === m || extrairMatriculasAdicionais(r.matriculas_adicionais).includes(m)));
     }
     const todasMatriculasDoEnvio = [matricula, ...extrairMatriculasAdicionais(matriculasAdicionais)];
-    const jaExistentes = todasMatriculasDoEnvio.filter(m => matriculaJaRegistrada(m));
+    // Reabertura: matrícula cujo registro atual é "Não foi possível realizar a pesquisa" pode ser imputada novamente
+    // (o cliente pode ter respondido depois). O registro é convertido no mesmo lugar -> não duplica o quantitativo.
+    let registroReaberto = null;
+    if(tipo !== TIPO_IMPOSSIBILIDADE){
+      const bloqueiaMain = RECORDS.filter(r => r.status !== 'rejeitado' && (r.matricula === matricula || extrairMatriculasAdicionais(r.matriculas_adicionais).includes(matricula)));
+      if(bloqueiaMain.length === 1 && bloqueiaMain[0].tipo === TIPO_IMPOSSIBILIDADE && bloqueiaMain[0].matricula === matricula){
+        registroReaberto = bloqueiaMain[0];
+      }
+    }
+    const jaExistentes = todasMatriculasDoEnvio.filter(m => !(registroReaberto && m === matricula) && matriculaJaRegistrada(m));
     if(jaExistentes.length){
       msg.style.color = 'var(--rose)';
-      msg.textContent = `A matrícula ${jaExistentes.join(', ')} já ${jaExistentes.length>1?'têm':'tem'} um registro no sistema. Procure por ${jaExistentes.length>1?'elas':'ela'} em "Lançar respostas" ou fale com a gestora se precisar reabrir.`;
+      msg.textContent = `A matrícula ${jaExistentes.join(', ')} já ${jaExistentes.length>1?'têm':'tem'} um registro no sistema. Procure por ${jaExistentes.length>1?'elas':'ela'} em "Lançar respostas" ou fale com a gestora se precisar reabrir. (Só registros de "Não foi possível realizar a pesquisa" podem ser imputados novamente.)`;
       return;
     }
 
@@ -1271,12 +1280,23 @@
       validado_por: null, data_validacao: null, validacao_obs: null,
       qualidade_abastecimento: null, prazo_resolucao: null, motivo_contato: null
     };
+    if(registroReaberto){
+      if(!confirm(`A matrícula ${matricula} está como "Não foi possível realizar a pesquisa" (OS ${registroReaberto.numero_os_impossibilidade||'–'}).\n\nImputar novamente? O registro volta para "Lançar respostas"; ao ser validado, a nota é contabilizada e a matrícula sai das "Não respondidas" (sem aumentar o quantitativo total).`)) return;
+      Object.assign(rec, {
+        id: registroReaberto.id,
+        matriculas_adicionais: matriculasAdicionais || registroReaberto.matriculas_adicionais || null,
+        numero_os_impossibilidade: null,
+        data_resposta: null, evidencia_imagem: null, evidencia_imagem_nome: null, evidencia_tipo: null, _imagemCarregada: true,
+        validacao_obs: `Reaberto: antes "Não foi possível realizar a pesquisa" (OS ${registroReaberto.numero_os_impossibilidade||'–'}); cliente respondeu depois.`
+      });
+    }
     btnSalvarEnvio.disabled = true;
     const ok = await saveRecord(rec);
     btnSalvarEnvio.disabled = false;
     if(ok){
+      if(registroReaberto){ RECORDS = RECORDS.filter(r=>r.id!==registroReaberto.id); }
       RECORDS.push(rec);
-      msg.style.color = 'var(--leaf)'; msg.textContent = 'Atendimento registrado.';
+      msg.style.color = 'var(--leaf)'; msg.textContent = registroReaberto ? 'Matrícula reaberta — lance as respostas em "Lançar respostas".' : 'Atendimento registrado.';
       document.getElementById('in-matricula').value=''; document.getElementById('in-telefone').value='';
       document.getElementById('in-matriculas-adicionais').value='';
       document.querySelectorAll('#in-superintendencia-checks input:checked').forEach(el=>el.checked=false);
