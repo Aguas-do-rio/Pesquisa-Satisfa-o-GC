@@ -367,6 +367,34 @@
           <label>Outras matrículas do mesmo cliente <span style="font-weight:500; color:var(--text-faint);">(opcional — mesmo telefone, mesmo print de evidência)</span></label>
           <input type="text" id="in-matriculas-adicionais" placeholder="Ex: 123457, 123458, 123459">
         </div>
+        <div class="field span2">
+          <label>A matrícula pertence à carteira de outro executivo? <span style="font-weight:500; color:var(--text-faint);">(opcional — indique de quem é)</span></label>
+          <select id="in-outro-executivo">
+            <option value="">Não — a matrícula é da minha carteira</option>
+            <option>Alessandra dos Santos</option>
+            <option>Alessandro Silveira</option>
+            <option>Aline Nunes</option>
+            <option>Danielle Matta</option>
+            <option>Danillo Castro</option>
+            <option>Diogo Garcia</option>
+            <option>Ediane Andrade</option>
+            <option>Ettiene Simoes</option>
+            <option>Fellipe Braga</option>
+            <option>Hagata Oliveira</option>
+            <option>Igor Coelho</option>
+            <option>Isabella Celio</option>
+            <option>Lhorrany Diamante</option>
+            <option>Livia Christine</option>
+            <option>Luciana Pires</option>
+            <option>Manuela Curvello</option>
+            <option>Marcos Rato</option>
+            <option>Matheus Betbeder</option>
+            <option>Mirella Saviti</option>
+            <option>Raniely Silva</option>
+            <option>Taina Costa</option>
+            <option>Tatiana Ribeiro</option>
+          </select>
+        </div>
         <div class="field"><label>Telefone do cliente</label><input type="text" id="in-telefone" placeholder="(21) 9...." autocomplete="off"></div>
         <div class="field">
           <label>Analista</label>
@@ -962,7 +990,7 @@
     });
   }
 
-  const COLUNAS_LEVES = 'id,matricula,matriculas_adicionais,telefone,analista,tipo,superintendencia,segmento,numero_os_impossibilidade,data_envio,status,data_resposta,nota_atendimento,evidencia_tipo,evidencia_imagem_nome,validado_por,data_validacao,validacao_obs,qualidade_abastecimento,prazo_resolucao,motivo_contato';
+  const COLUNAS_LEVES = 'id,executivo_carteira,matricula,matriculas_adicionais,telefone,analista,tipo,superintendencia,segmento,numero_os_impossibilidade,data_envio,status,data_resposta,nota_atendimento,evidencia_tipo,evidencia_imagem_nome,validado_por,data_validacao,validacao_obs,qualidade_abastecimento,prazo_resolucao,motivo_contato';
 
   async function loadAll(){
     if(!CONFIGURED){
@@ -1268,6 +1296,7 @@
     const rec = {
       id: uid(), matricula, telefone, analista, tipo, superintendencia, segmento,
       matriculas_adicionais: matriculasAdicionais,
+      executivo_carteira: (document.getElementById('in-outro-executivo').value || null),
       numero_os_impossibilidade: tipo===TIPO_IMPOSSIBILIDADE ? numeroOsImpossibilidade : null,
       data_envio: nowISO(),
       // "Não foi possível realizar a pesquisa": já nasce com a evidência e segue direto para validação (sem passar por "Lançar respostas")
@@ -1298,7 +1327,7 @@
       RECORDS.push(rec);
       msg.style.color = 'var(--leaf)'; msg.textContent = registroReaberto ? 'Matrícula reaberta — lance as respostas em "Lançar respostas".' : 'Atendimento registrado.';
       document.getElementById('in-matricula').value=''; document.getElementById('in-telefone').value='';
-      document.getElementById('in-matriculas-adicionais').value='';
+      document.getElementById('in-matriculas-adicionais').value=''; document.getElementById('in-outro-executivo').value='';
       document.querySelectorAll('#in-superintendencia-checks input:checked').forEach(el=>el.checked=false);
       document.getElementById('in-tipo').value=''; document.getElementById('in-tipo-outros').value='';
       document.getElementById('in-tipo-outros-wrap').style.display='none';
@@ -1321,7 +1350,7 @@
     const recentes = [...RECORDS].sort((a,b)=> (b.data_envio||'').localeCompare(a.data_envio||'')).slice(0,15);
     document.getElementById('tbody-recentes').innerHTML = recentes.length===0 ? `<tr class="empty-row"><td colspan="7">Nenhum atendimento registrado ainda.</td></tr>` :
       recentes.map(r=>`<tr>
-        <td>${escapeHtml(r.matricula)}</td><td>${escapeHtml(r.analista)}</td><td>${escapeHtml(r.tipo||'–')}</td>
+        <td>${escapeHtml(r.matricula)}${r.executivo_carteira ? `<div style="font-size:11px; color:var(--amber,#b7791f); font-weight:700; margin-top:2px;">Carteira de ${escapeHtml(r.executivo_carteira)}</div>` : ''}</td><td>${escapeHtml(r.analista)}</td><td>${escapeHtml(r.tipo||'–')}</td>
         <td>${escapeHtml(r.superintendencia)}</td><td>${escapeHtml(r.segmento||'–')}</td><td>${fmtDateBR(r.data_envio)}</td><td>${statusLabel[r.status]||r.status}</td>
       </tr>`).join('');
   }
@@ -1694,7 +1723,7 @@
     tb.innerHTML = aguardando.length===0 ? `<tr class="empty-row"><td colspan="6">Nada aguardando validação no momento.</td></tr>` :
       aguardando.map(r=>`
         <tr>
-          <td>${escapeHtml(r.matricula)}${r.matriculas_adicionais ? `<div style="font-size:11px; color:var(--water); font-weight:700; margin-top:2px;">+ ${escapeHtml(r.matriculas_adicionais)}<br>(${contarMatriculas(r)} matrículas no total)</div>` : ''}</td><td>${escapeHtml(r.analista)}</td>
+          <td>${escapeHtml(r.matricula)}${r.executivo_carteira ? `<div style="font-size:11px; color:var(--amber,#b7791f); font-weight:700; margin-top:2px;">Carteira de ${escapeHtml(r.executivo_carteira)}</div>` : ''}${r.matriculas_adicionais ? `<div style="font-size:11px; color:var(--water); font-weight:700; margin-top:2px;">+ ${escapeHtml(r.matriculas_adicionais)}<br>(${contarMatriculas(r)} matrículas no total)</div>` : ''}</td><td>${escapeHtml(r.analista)}</td>
           <td>${r.nota_atendimento ? '★'.repeat(r.nota_atendimento) + `<span style="color:#D8E2E8">${'★'.repeat(5-r.nota_atendimento)}</span>` : '<span class="evid-none">sem nota</span>'}</td>
           <td>
             <div class="evid-cell">
