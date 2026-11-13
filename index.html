@@ -942,10 +942,11 @@
 
   // Um registro pode representar mais de uma matrícula (mesmo cliente, mesmo print).
   // Para efeito de meta/validação, cada matrícula listada conta como uma unidade.
-  // Aceita vírgula OU espaço como separador (algumas pessoas digitam sem vírgula).
+  // Aceita qualquer separador (vírgula, espaço, hífen etc.).
   function extrairMatriculasAdicionais(texto){
     if(!texto) return [];
-    return texto.split(/[,\s]+/).map(s=>s.trim()).filter(Boolean);
+    // Pega qualquer sequência de 7+ dígitos (matrícula), qualquer que seja o separador: vírgula, espaço, hífen, ponto e vírgula, barra...
+    return String(texto).match(/\d{7,}/g) || [];
   }
   function contarMatriculas(r){
     return 1 + extrairMatriculasAdicionais(r.matriculas_adicionais).length;
